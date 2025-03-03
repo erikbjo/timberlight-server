@@ -1,12 +1,25 @@
 package server
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/http/proxy"
 	"skogkursbachelor/server/internal/utils"
 )
+
+func loadConfig(file string) (map[string]string, error) {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	var config map[string]string
+	err = json.Unmarshal(data, &config)
+	return config, err
+}
 
 // Start
 /*
@@ -16,16 +29,21 @@ func Start() {
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
 
+	// Get list of proxy endpoints
+	proxies, err := loadConfig("proxy.json")
+	if err != nil {
+		log.Fatal("Error loading proxies: ", err)
+	}
+
 	// Using mux to handle /'s and parameters
 	mux := http.NewServeMux()
 
 	// Set up handler endpoints, with and without trailing slash
-	// Proxy
-	testProxy := proxy.Proxy{
-		RemoteAddr: "http://example.com/",
+	// Proxies
+	for path, remoteAddr := range proxies {
+		p := &proxy.Proxy{RemoteAddr: remoteAddr}
+		mux.HandleFunc(constants.ProxyPath+path, p.ProxyHandler)
 	}
-
-	mux.HandleFunc(constants.ProxyPath, testProxy.ProxyHandler)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")
