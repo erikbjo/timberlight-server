@@ -41,6 +41,7 @@ func Start() {
 	// Set up handler endpoints, with and without trailing slash
 	// Proxies
 	for path, remoteAddr := range proxies {
+		log.Println(path, "->", remoteAddr)
 		p := &proxy.Proxy{RemoteAddr: remoteAddr}
 		mux.HandleFunc(constants.ProxyPath+path, p.ProxyHandler)
 	}

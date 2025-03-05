@@ -50,37 +50,47 @@ type Proxy struct {
 	RemoteAddr string
 }
 
-func (p *Proxy) ProxyHandler(w http.ResponseWriter, req *http.Request) {
-	log.Println(req.RemoteAddr, " ", req.Method, " ", req.URL, " ", req.URL.Scheme)
+func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received request for", p.RemoteAddr)
 
-	parsedURL, err := url.Parse(p.RemoteAddr)
+	// Parse the remote address
+	remoteURL, err := url.Parse(p.RemoteAddr)
 	if err != nil {
-		http.Error(w, "Invalid remote WMS URL", http.StatusInternalServerError)
+		http.Error(w, "Invalid remote address", http.StatusInternalServerError)
 		return
 	}
 
-	delHopHeaders(req.Header)
-
-	// Forward query parameters from the client request
-	query := req.URL.RawQuery
-	parsedURL.RawQuery = query
-
-	//if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
-	//	appendHostToXForwardHeader(req.Header, clientIP)
-	//}
-
-	resp, err := http.Get(parsedURL.String())
+	// Create the request
+	proxyReq, err := http.NewRequest(r.Method, remoteURL.String()+"?"+r.URL.RawQuery, r.Body)
 	if err != nil {
-		http.Error(w, "Server Error", http.StatusInternalServerError)
-		log.Fatal("ServeHTTP:", err)
+		http.Error(w, "Failed to create request", http.StatusInternalServerError)
+		return
+	}
+
+	// Copy headers
+	for key, values := range r.Header {
+		for _, value := range values {
+			proxyReq.Header.Add(key, value)
+		}
+	}
+
+	// Make the request
+	client := &http.Client{}
+	resp, err := client.Do(proxyReq)
+	if err != nil {
+		http.Error(w, "Failed to fetch data from WMS server", http.StatusBadGateway)
+		return
 	}
 	defer resp.Body.Close()
 
-	log.Println(req.RemoteAddr, " ", resp.Status)
+	// Copy response headers
+	for key, values := range resp.Header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
 
-	delHopHeaders(resp.Header)
-
-	copyHeader(w.Header(), resp.Header)
+	// Set the status code and write the response body
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }

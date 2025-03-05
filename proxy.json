@@ -1,4 +1,8 @@
 {
   "test": "http://www.example.com",
-  "test2": "http://www.example.com"
+  "forestryroads": "https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger",
+  "frostdepth": "https://nve.geodataonline.no/arcgis/services/seNorgeGrid_png/ImageServer/WMSServer",
+  "ncwms": "http://10.212.171.219:3030/ncWMS2/wms",
+  "probablesoilmoisture": "https://wms.nibio.no/cgi-bin/markfuktighetskart",
+  "superficialdeposits": "https://geo.ngu.no/mapserver/LosmasserWMS2"
 }
