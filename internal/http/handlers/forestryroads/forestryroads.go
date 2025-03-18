@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 )
 
 // implementedMethods is a list of the implemented HTTP methods for the status endpoint.
@@ -41,27 +42,19 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// 4. Calculate trafficality
 	// 5. Return the response, with the calculated trafficality as a rgb value in the geojson response
 
-	// 1. Mirror the request to the remote server
-	// Get url parameters
-	log.Println(r.URL.RawQuery)
-	//rawQuery, err := url.Parse(r.URL.RawQuery)
-	//if err != nil {
-	//	http.Error(w, "Failed to parse url parameters", http.StatusInternalServerError)
-	//	log.Println("Error parsing url parameters: ", err)
-	//	return
-	//}
+	// Get time parameter from url
+	time := r.URL.Query().Get("time")
+	// Split ISO string to get date. ex: 2021-03-01T00:00:00Z -> 2021-03-01
+	// Gets put into struct later
+	date := strings.Split(time, "T")[0]
 
-	// 2. Mirror request to https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger
-	// Create the request
+	// Mirror request to https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger
 	proxyReq, err := http.NewRequest(r.Method, "https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger?"+r.URL.RawQuery, r.Body)
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		log.Println("Error creating request: ", err)
 		return
 	}
-
-	// Print request for testing
-	log.Println("Proxy req url:" + proxyReq.URL.String())
 
 	// Do request
 	proxyResp, err := http.DefaultClient.Do(proxyReq)
@@ -80,8 +73,12 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Randomize color for testing
+	// Randomize color for testing, update date
 	for i, _ := range wfsResponse.Features {
+		if wfsResponse.Date == "" {
+			wfsResponse.Date = date
+		}
+
 		if wfsResponse.Features[i].Properties.Farge == nil {
 			wfsResponse.Features[i].Properties.Farge = make([]int, 3)
 		}

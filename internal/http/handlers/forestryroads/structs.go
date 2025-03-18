@@ -10,6 +10,7 @@ type WFSResponse struct {
 			Name string `json:"name"`
 		} `json:"properties"`
 	} `json:"crs"`
+	Date     string `json:"date"`
 	Features []struct {
 		Type       string `json:"type"`
 		Properties struct {
