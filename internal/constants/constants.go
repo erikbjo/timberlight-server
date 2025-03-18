@@ -6,6 +6,7 @@ const DefaultPath = "/"
 // Version of the API
 const Version = "v1"
 
-const ProxyPath = DefaultPath + "proxy/"
+const APIPath = DefaultPath + "api/" + Version + "/"
+const ForestryRoadsPath = APIPath + "forestryroads"
 
-const TestProxyPath = ProxyPath + "test/"
+const ProxyPath = DefaultPath + "proxy/"

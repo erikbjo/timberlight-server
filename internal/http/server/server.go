@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"os"
 	"skogkursbachelor/server/internal/constants"
-	"skogkursbachelor/server/internal/http/proxy"
+	"skogkursbachelor/server/internal/http/handlers/forestryroads"
+	"skogkursbachelor/server/internal/http/handlers/proxy"
 	"skogkursbachelor/server/internal/utils"
 )
 
@@ -45,6 +46,9 @@ func Start() {
 		p := &proxy.Proxy{RemoteAddr: remoteAddr}
 		mux.HandleFunc(constants.ProxyPath+path, p.ProxyHandler)
 	}
+
+	// Forestry roads
+	mux.HandleFunc(constants.ForestryRoadsPath, forestryroads.Handler)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")
