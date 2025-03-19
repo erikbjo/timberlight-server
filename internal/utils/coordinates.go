@@ -1,11 +1,9 @@
 package utils
 
 import (
-	"encoding/json"
+	"github.com/twpayne/go-proj/v11"
 	"log"
 	"math"
-	"net/http"
-	"skogkursbachelor/server/internal/constants"
 	"strconv"
 )
 
@@ -19,32 +17,20 @@ type mapTilerTransformationResponse struct {
 }
 
 func TransformCoordinates(coordinates []float64, epsgFrom, epsgTo int) (int, int, error) {
-	r, err := http.NewRequest(
-		http.MethodGet,
-		constants.MapTilerTransformAPI+strconv.FormatFloat(coordinates[0], 'f', -1, 64)+","+strconv.FormatFloat(coordinates[1], 'f', -1, 64)+".json?s_srs="+strconv.Itoa(epsgFrom)+"&t_srs="+strconv.Itoa(epsgTo)+"&key="+GetMapTilerAPIKey(),
-		nil,
-	)
+	log.Println("Transforming coordinates: "+strconv.FormatFloat(coordinates[0], 'f', -1, 64)+", "+strconv.FormatFloat(coordinates[1], 'f', -1, 64)+" from EPSG:", epsgFrom, "to EPSG:", epsgTo)
 
+	pj, err := proj.NewCRSToCRS("EPSG:"+strconv.Itoa(epsgFrom), "EPSG:"+strconv.Itoa(epsgTo), nil)
 	if err != nil {
-		log.Println("Error creating request: ", err)
-		return -1, -1, err
+		log.Println("Failed to projection CRSToCRS:", err)
+		return 0, 0, err
 	}
 
-	resp, err := http.DefaultClient.Do(r)
+	oldCoords := proj.NewCoord(coordinates[0], coordinates[1], 0, 0)
+	newCoords, err := pj.Forward(oldCoords)
 	if err != nil {
-		log.Println("Error doing request: ", err)
-		return -1, -1, err
+		log.Println("Failed to transform coordinates:", err)
+		return 0, 0, err
 	}
 
-	defer resp.Body.Close()
-
-	// Decode response
-	var response mapTilerTransformationResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		log.Println("Error decoding response: ", err)
-		return -1, -1, err
-	}
-
-	return int(math.Round(response.Results[0].X)), int(math.Round(response.Results[0].Y)), nil
+	return int(math.Round(newCoords.X())), int(math.Round(newCoords.Y())), nil
 }
