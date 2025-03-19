@@ -10,3 +10,7 @@ const APIPath = DefaultPath + "api/" + Version + "/"
 const ForestryRoadsPath = APIPath + "forestryroads"
 
 const ProxyPath = DefaultPath + "proxy/"
+
+// API endpoints
+
+const MapTilerTransformAPI = "https://api.maptiler.com/coordinates/transform/"

@@ -21,3 +21,15 @@ func GetPort() string {
 
 	return port
 }
+
+func GetMapTilerAPIKey() string {
+	// Get the PORT environment variable
+	apiKey := os.Getenv("MAPTILER_API_KEY")
+
+	// Use default Port variable if not provided
+	if apiKey == "" {
+		log.Println("$MAPTILER_API_KEY has not been set.")
+	}
+
+	return apiKey
+}
