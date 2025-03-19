@@ -1,13 +1,15 @@
 package forestryroads
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"net/url"
+	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/utils"
+	"strconv"
+	"strings"
 )
 
 type MapGridResponse struct {
@@ -32,49 +34,142 @@ func GetIsGroundFrozen(coordinates []float64, date string) (bool, error) {
 		return false, fmt.Errorf("failed to transform coordinates: %v", err)
 	}
 
-	startDateTime := date + "T00:00:00Z"
-	endDateTime := date + "T23:59:59Z"
+	body := nveFrostDepthRequest{
+		Theme:            "gwb_frd",
+		StartDate:        date + "T00",
+		EndDate:          date + "T00",
+		Format:           "json",
+		MapCoordinateCsv: fmt.Sprintf("%d %d", utmX, utmY),
+	}
 
-	// Build the API URL
-	apiURL := "https://services.xgeo.no/seNorgeMapAppServices/Services/UIService.svc/GetMapGridInfo"
-	queryParams := fmt.Sprintf(`{"x":%d,"y":%d,"id":"gwb_frd","startDateTime":"%s","endDateTime":"%s"}`,
-		utmX, utmY, startDateTime, endDateTime)
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal request body: %v", err)
+	}
 
-	fullURL := apiURL + "?request=" + url.QueryEscape(queryParams)
+	// Use NVE api to get frost data
+	r, err := http.NewRequest(
+		http.MethodPost,
+		constants.NVEFrostDepthAPI,
+		bytes.NewBuffer(bodyJSON),
+	)
+
+	r.Header.Set("Content-Type", "application/json")
+
+	// Print whole request
+	log.Println("Request: ", r)
+
+	if err != nil {
+		log.Println("Error creating request: ", err)
+		return false, err
+	}
 
 	// Do the request
-	resp, err := http.Get(fullURL)
+	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		return false, fmt.Errorf("failed to fetch frost data: %v", err)
+		log.Println("Error doing request: ", err)
+		return false, err
 	}
+
 	defer resp.Body.Close()
 
-	// Read response
-	body, err := io.ReadAll(resp.Body)
+	// Decode response
+	response := nveFrostDepthResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return false, fmt.Errorf("failed to read response: %v", err)
+		log.Println("Error decoding response: ", err)
+		return false, err
 	}
-
-	// Parse body
-	var result MapGridResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return false, fmt.Errorf("failed to parse JSON response: %v", err)
-	}
-
-	// Error from API
-	if result.ErrorMessage != nil {
-		return false, fmt.Errorf("API error: %s", *result.ErrorMessage)
-	}
-
-	// Check if we got any data
-	if len(result.MapGridValue) == 0 {
-		return false, fmt.Errorf("no frost data available for the given coordinates and date")
-	}
-
-	log.Println("Received frost data:", result.MapGridValue)
 
 	// Return true if the frost value is less than or equal to 0
 	// TODO: Add proper check for frost value with the correct threshold
 	threshold := 0.0
-	return result.MapGridValue[0] >= threshold, nil
+	return response.CellTimeSeries[0].Data[0] > threshold, nil
+}
+
+// Currently only uses one point in the middle of the road
+func GetIsGroundFrozenAlongFeature(feature WFSFeature, date string) (bool, error) {
+	// Get middle of the road (ish)
+	coordinates := new([][]int)
+	for i := range feature.Geometry.Coordinates {
+		newX, newY, err := utils.TransformCoordinates(feature.Geometry.Coordinates[i], 3857, 25833)
+		if err != nil {
+			return false, fmt.Errorf("failed to transform coordinates: %v", err)
+		}
+
+		*coordinates = append(*coordinates, []int{newX, newY})
+	}
+
+	// Create request body
+	// Coordinates is in format "X1 Y1, X2 Y2, ..."
+	stringBuilder := strings.Builder{}
+
+	length := len(*coordinates)
+	for i := range *coordinates {
+		stringBuilder.WriteString(strconv.Itoa((*coordinates)[i][0]))
+		stringBuilder.WriteString(" ")
+		stringBuilder.WriteString(strconv.Itoa((*coordinates)[i][1]))
+		if i < length-1 {
+			stringBuilder.WriteString(", ")
+		}
+	}
+
+	// only take start coordinates, as the API fails when multiple coordinates are in the zane gridbox
+	stringBuilder.WriteString(fmt.Sprintf("%d %d", (*coordinates)[0][0], (*coordinates)[0][1]))
+
+	coordinatesString := stringBuilder.String()
+
+	body := nveFrostDepthRequest{
+		Theme:            "gwb_frd",
+		StartDate:        date + "T00",
+		EndDate:          date + "T00",
+		Format:           "json",
+		MapCoordinateCsv: coordinatesString,
+	}
+
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal request body: %v", err)
+	}
+
+	// Use NVE api to get frost data
+	r, err := http.NewRequest(
+		http.MethodPost,
+		constants.NVEFrostDepthAPI,
+		bytes.NewBuffer(bodyJSON),
+	)
+
+	r.Header.Set("Content-Type", "application/json")
+
+	// Print whole request
+	log.Println("Request: ", r)
+
+	if err != nil {
+		log.Println("Error creating request: ", err)
+		return false, err
+	}
+
+	// Do the request
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		log.Println("Error doing request: ", err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+
+	// Decode response
+	response := nveFrostDepthResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		log.Println("Error decoding response: ", err)
+		return false, err
+	}
+
+	// Print response
+	log.Println("Received frost data:", response.CellTimeSeries)
+
+	// TODO: Add proper check for frost value with the correct threshold
+
+	return true, nil
 }

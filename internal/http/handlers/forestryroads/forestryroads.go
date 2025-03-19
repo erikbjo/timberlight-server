@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
 )
@@ -74,7 +73,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Randomize color for testing, update date
-	for i, _ := range wfsResponse.Features {
+	for i := range wfsResponse.Features {
 		if wfsResponse.Date == "" {
 			wfsResponse.Date = date
 		}
@@ -83,9 +82,28 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 			wfsResponse.Features[i].Properties.Farge = make([]int, 3)
 		}
 
-		wfsResponse.Features[i].Properties.Farge[0] = rand.Intn(256)
-		wfsResponse.Features[i].Properties.Farge[1] = rand.Intn(256)
-		wfsResponse.Features[i].Properties.Farge[2] = rand.Intn(256)
+		// Get middle of the road (ish)
+		length := len(wfsResponse.Features[i].Geometry.Coordinates)
+		middleIndex := length / 2
+
+		isFrozen, err := GetIsGroundFrozen(wfsResponse.Features[i].Geometry.Coordinates[middleIndex], date)
+		if err != nil {
+			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
+			log.Println("Error getting frost data: ", err)
+			return
+		}
+
+		// If the ground is frozen, set the color to green
+		if isFrozen {
+			wfsResponse.Features[i].Properties.Farge[0] = 0
+			wfsResponse.Features[i].Properties.Farge[1] = 255
+			wfsResponse.Features[i].Properties.Farge[2] = 0
+		} else {
+			// If the ground is not frozen, set the color to red
+			wfsResponse.Features[i].Properties.Farge[0] = 255
+			wfsResponse.Features[i].Properties.Farge[1] = 0
+			wfsResponse.Features[i].Properties.Farge[2] = 0
+		}
 	}
 
 	// Encode response

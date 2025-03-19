@@ -14,3 +14,4 @@ const ProxyPath = DefaultPath + "proxy/"
 // API endpoints
 
 const MapTilerTransformAPI = "https://api.maptiler.com/coordinates/transform/"
+const NVEFrostDepthAPI = "https://gts.nve.no/api/MultiPointTimeSeries/ByMapCoordinateCsv"
