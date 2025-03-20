@@ -6,12 +6,14 @@ const DefaultPath = "/"
 // Version of the API
 const Version = "v1"
 
+// Internal Endpoints
+
 const APIPath = DefaultPath + "api/" + Version + "/"
 const ForestryRoadsPath = APIPath + "forestryroads"
 
 const ProxyPath = DefaultPath + "proxy/"
 
-// API endpoints
+// External Endpoints
 
-const MapTilerTransformAPI = "https://api.maptiler.com/coordinates/transform/"
 const NVEFrostDepthAPI = "https://gts.nve.no/api/MultiPointTimeSeries/ByMapCoordinateCsv"
+const ForestryRoadsWFS = "https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger"

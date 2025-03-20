@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"skogkursbachelor/server/internal/constants"
 	"strings"
 )
 
@@ -43,23 +44,32 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 
 	// Get time parameter from url
 	time := r.URL.Query().Get("time")
+	if time == "" {
+		http.Error(w, "Missing time URL parameter", http.StatusBadRequest)
+		return
+	}
+
 	// Split ISO string to get date. ex: 2021-03-01T00:00:00Z -> 2021-03-01
 	// Gets put into struct later
 	date := strings.Split(time, "T")[0]
 
 	// Mirror request to https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger
-	proxyReq, err := http.NewRequest(r.Method, "https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger?"+r.URL.RawQuery, r.Body)
+	proxyReq, err := http.NewRequest(
+		r.Method,
+		constants.ForestryRoadsWFS+"?"+r.URL.RawQuery,
+		r.Body,
+	)
 	if err != nil {
-		http.Error(w, "Failed to create request", http.StatusInternalServerError)
-		log.Println("Error creating request: ", err)
+		http.Error(w, "Failed to create internal request", http.StatusInternalServerError)
+		log.Println("Error creating request to GeoNorge for forestry roads: ", err)
 		return
 	}
 
 	// Do request
 	proxyResp, err := http.DefaultClient.Do(proxyReq)
 	if err != nil {
-		http.Error(w, "Failed to fetch data from WMS server", http.StatusBadGateway)
-		log.Println("Error fetching data from WMS server: ", err)
+		http.Error(w, "Failed to fetch data from external WMS server", http.StatusBadGateway)
+		log.Println("Error fetching data from GeoNorge WMS server: ", err)
 		return
 	}
 
@@ -67,8 +77,8 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	var wfsResponse WFSResponse
 	err = json.NewDecoder(proxyResp.Body).Decode(&wfsResponse)
 	if err != nil {
-		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
-		log.Println("Error decoding response: ", err)
+		http.Error(w, "Failed to decode external response", http.StatusInternalServerError)
+		log.Println("Error decoding response from GeoNorge WMS server: ", err)
 		return
 	}
 
@@ -110,7 +120,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(wfsResponse)
 	if err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		log.Println("Error encoding response: ", err)
+		log.Println("Error encoding final response: ", err)
 		return
 	}
 }

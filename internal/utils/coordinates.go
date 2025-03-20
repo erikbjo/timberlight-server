@@ -17,7 +17,7 @@ type mapTilerTransformationResponse struct {
 }
 
 func TransformCoordinates(coordinates []float64, epsgFrom, epsgTo int) (int, int, error) {
-	log.Println("Transforming coordinates: "+strconv.FormatFloat(coordinates[0], 'f', -1, 64)+", "+strconv.FormatFloat(coordinates[1], 'f', -1, 64)+" from EPSG:", epsgFrom, "to EPSG:", epsgTo)
+	//log.Println("Transforming coordinates: "+strconv.FormatFloat(coordinates[0], 'f', -1, 64)+", "+strconv.FormatFloat(coordinates[1], 'f', -1, 64)+" from EPSG:", epsgFrom, "to EPSG:", epsgTo)
 
 	pj, err := proj.NewCRSToCRS("EPSG:"+strconv.Itoa(epsgFrom), "EPSG:"+strconv.Itoa(epsgTo), nil)
 	if err != nil {

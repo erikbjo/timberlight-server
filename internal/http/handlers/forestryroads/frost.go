@@ -53,16 +53,12 @@ func GetIsGroundFrozen(coordinates []float64, date string) (bool, error) {
 		constants.NVEFrostDepthAPI,
 		bytes.NewBuffer(bodyJSON),
 	)
-
-	r.Header.Set("Content-Type", "application/json")
-
-	// Print whole request
-	log.Println("Request: ", r)
-
 	if err != nil {
 		log.Println("Error creating request: ", err)
 		return false, err
 	}
+
+	r.Header.Set("Content-Type", "application/json")
 
 	// Do the request
 	resp, err := http.DefaultClient.Do(r)
