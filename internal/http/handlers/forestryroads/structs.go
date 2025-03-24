@@ -15,8 +15,10 @@ type WFSResponse struct {
 }
 
 type WFSFeature struct {
-	Type       string `json:"type"`
-	Properties struct {
+	Type              string `json:"type"`
+	IsFrozen          bool   `json:"isFrozen"`
+	MiddleOfRoad25833 []int  `json:"middleOfRoad25833"`
+	Properties        struct {
 		Kommunenummer      string `json:"kommunenummer"`
 		Vegkategori        string `json:"vegkategori"`
 		Vegfase            string `json:"vegfase"`
@@ -41,7 +43,7 @@ type nveFrostDepthRequest struct {
 	MapCoordinateCsv string `json:"MapCoordinateCsv"`
 }
 
-type nveFrostDepthResponse struct {
+type nveCellTimeSeriesFrostDepthResponse struct {
 	CellTimeSeries    []cellTimeSeries `json:"CellTimeSeries"`
 	Theme             string           `json:"Theme"`
 	FullName          interface{}      `json:"FullName"`
@@ -51,6 +53,21 @@ type nveFrostDepthResponse struct {
 	PrognoseStartDate interface{}      `json:"PrognoseStartDate"`
 	Unit              string           `json:"Unit"`
 	TimeResolution    int              `json:"TimeResolution"`
+}
+
+type nveGridTimeSeriesFrostDepthResponse struct {
+	Theme             string      `json:"Theme"`
+	FullName          string      `json:"FullName"`
+	NoDataValue       int         `json:"NoDataValue"`
+	X                 int         `json:"X"`
+	Y                 int         `json:"Y"`
+	StartDate         string      `json:"StartDate"`
+	EndDate           string      `json:"EndDate"`
+	PrognoseStartDate interface{} `json:"PrognoseStartDate"`
+	Unit              string      `json:"Unit"`
+	TimeResolution    int         `json:"TimeResolution"`
+	Altitude          int         `json:"Altitude"`
+	Data              []float64   `json:"Data"`
 }
 
 type cellTimeSeries struct {

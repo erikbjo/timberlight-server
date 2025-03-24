@@ -16,4 +16,5 @@ const ProxyPath = DefaultPath + "proxy/"
 // External Endpoints
 
 const NVEFrostDepthAPI = "https://gts.nve.no/api/MultiPointTimeSeries/ByMapCoordinateCsv"
+const NVEAreaTimeSeriesAPI = "https://gts.nve.no/api/GridTimeSeries/{x}/{y}/{startdate}/{enddate}/{theme}.{format}"
 const ForestryRoadsWFS = "https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger"

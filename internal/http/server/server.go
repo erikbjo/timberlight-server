@@ -88,6 +88,16 @@ func Start() {
 	//	},
 	//}
 	//
+	//transformedCoordinates := make([][]int, len(testFeature.Geometry.Coordinates))
+	//for i := range testFeature.Geometry.Coordinates {
+	//	newX, newY, err := utils.TransformCoordinates(testFeature.Geometry.Coordinates[i], 3857, 25833)
+	//	if err != nil {
+	//		log.Fatal("Failed to transform coordinates: ", err)
+	//	}
+	//	transformedCoordinates[i] = []int{newX, newY}
+	//}
+	//log.Println(transformedCoordinates)
+
 	//log.Println(forestryroads.GetIsGroundFrozenAlongFeature(testFeature, "2025-03-18"))
 
 	//coords := []float64{1186244.298553594, 8579340.020600447}
