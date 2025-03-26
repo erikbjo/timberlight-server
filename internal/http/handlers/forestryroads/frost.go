@@ -10,20 +10,7 @@ import (
 	"strings"
 )
 
-type MapGridResponse struct {
-	ErrorMessage   *string   `json:"ErrorMessage"`
-	MapGridValue   []float64 `json:"MapGridValue"`
-	Theme          string    `json:"Theme"`
-	Unit           string    `json:"Unit"`
-	TimeResolution int       `json:"TimeResolution"`
-	MASL           int       `json:"MASL"`
-	NoDataValue    int       `json:"NoDataValue"`
-}
-
-// Strict client for the NVE frost depth API
-var client = http.Client{}
-
-func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[string]bool, error) {
+func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[string]bool, error) {
 	// Create request body
 	// Coordinates is in format "X1 Y1, X2 Y2, ..."
 	stringBuilder := strings.Builder{}
@@ -72,7 +59,7 @@ func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	}
 
 	// Do the request
-	resp, err := client.Do(r)
+	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
 		log.Println("Error doing request: ", err)
 		return nil, err

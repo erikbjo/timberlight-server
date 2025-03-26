@@ -55,21 +55,6 @@ type nveCellTimeSeriesFrostDepthResponse struct {
 	TimeResolution    int              `json:"TimeResolution"`
 }
 
-type nveGridTimeSeriesFrostDepthResponse struct {
-	Theme             string      `json:"Theme"`
-	FullName          string      `json:"FullName"`
-	NoDataValue       int         `json:"NoDataValue"`
-	X                 int         `json:"X"`
-	Y                 int         `json:"Y"`
-	StartDate         string      `json:"StartDate"`
-	EndDate           string      `json:"EndDate"`
-	PrognoseStartDate interface{} `json:"PrognoseStartDate"`
-	Unit              string      `json:"Unit"`
-	TimeResolution    int         `json:"TimeResolution"`
-	Altitude          int         `json:"Altitude"`
-	Data              []float64   `json:"Data"`
-}
-
 type cellTimeSeries struct {
 	X         int       `json:"X"`
 	Y         int       `json:"Y"`

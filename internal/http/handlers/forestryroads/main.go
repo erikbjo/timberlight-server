@@ -13,6 +13,23 @@ import (
 // implementedMethods is a list of the implemented HTTP methods for the status endpoint.
 var implementedMethods = []string{http.MethodGet}
 
+// index is a spatial index for the forestry roads
+var index *SpatialIndex
+
+func init() {
+	shapefiles := []string{
+		"data/Losmasse/LosmasseFlate_20240621",
+		"data/Losmasse/LosmasseFlate_20240622",
+		"data/Losmasse/LosmasseGrense_20240621",
+	}
+
+	// Build spatial index
+	index = ReadShapeFilesAndBuildIndex(shapefiles)
+	log.Println("Index built successfully!")
+
+	log.Println("Forestry roads handler initialized")
+}
+
 // Handler handles requests to the forestry road endpoint.
 // Currently only GET requests are supported.
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +114,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Processing features took: %v", time.Since(startProcessing))
 
 	startFrost := time.Now()
-	isFrozenMap, err := MapGridCentersToFrozenStatus(shardedMap.getHashSetFromShardedMap(), date)
+	isFrozenMap, err := mapGridCentersToFrozenStatus(shardedMap.getHashSetFromShardedMap(), date)
 	if err != nil {
 		http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
 		log.Println("Error getting frost data: ", err)
@@ -119,15 +136,26 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 
 		for i := range features {
 			features[i].IsFrozen = isFrozen
-			if isFrozen {
-				features[i].Properties.Farge = []int{0, 255, 0}
-			} else {
-				features[i].Properties.Farge = []int{255, 0, 0}
-			}
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
 	}
 	log.Printf("Updating features took: %v", time.Since(startUpdate))
+	log.Printf("Total length of features: %v", len(transcribedFeatures))
+
+	// Test superficial deposits for first feature
+	codes, err := GetSuperficialDepositCodesForFeature(transcribedFeatures[0])
+	if err != nil {
+		http.Error(w, "Failed to get superficial deposit data", http.StatusInternalServerError)
+		log.Println("Error getting superficial deposit data: ", err)
+		return
+	}
+
+	log.Printf("Superficial deposit codes: %v", codes)
+
+	// Classify the features
+	for i := range transcribedFeatures {
+		ClassifyFeature(&transcribedFeatures[i])
+	}
 
 	// Replace the features with the transcribed features
 	wfsResponse.Features = transcribedFeatures
@@ -141,4 +169,12 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Total request timeDate: %v", time.Since(startTotal))
+}
+
+func ClassifyFeature(feature *WFSFeature) {
+	if feature.IsFrozen {
+		feature.Properties.Farge = []int{0, 0, 255}
+	} else {
+		feature.Properties.Farge = []int{255, 0, 0}
+	}
 }
