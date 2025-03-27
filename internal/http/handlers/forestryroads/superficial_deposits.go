@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
 	"slices"
 	"strconv"
 	"sync"
 )
 
-func UpdateSuperficialDepositCodesForFeatureArray(featureArray *[]WFSFeature) error {
-	//log.Println("Starting UpdateSuperficialDepositCodesForFeatureArray")
-	//defer log.Println("Finished UpdateSuperficialDepositCodesForFeatureArray")
+func updateSuperficialDepositCodesForFeatureArray(featureArray *[]structures.WFSFeature) error {
+	//log.Println("Starting updateSuperficialDepositCodesForFeatureArray")
+	//defer log.Println("Finished updateSuperficialDepositCodesForFeatureArray")
 
 	semaphore := make(chan struct{}, runtime.NumCPU())
 	var wg sync.WaitGroup
@@ -22,12 +23,12 @@ func UpdateSuperficialDepositCodesForFeatureArray(featureArray *[]WFSFeature) er
 		// Reserve a slot
 		semaphore <- struct{}{}
 
-		go func(feature *WFSFeature) {
+		go func(feature *structures.WFSFeature) {
 			defer wg.Done()
 			// Release the slot
 			defer func() { <-semaphore }()
 
-			codes, err := GetSuperficialDepositCodesForFeature(*feature)
+			codes, err := getSuperficialDepositCodesForFeature(*feature)
 			if err != nil {
 				return
 			}
@@ -40,7 +41,7 @@ func UpdateSuperficialDepositCodesForFeatureArray(featureArray *[]WFSFeature) er
 	return nil
 }
 
-func GetSuperficialDepositCodesForFeature(feature WFSFeature) ([]int, error) {
+func getSuperficialDepositCodesForFeature(feature structures.WFSFeature) ([]int, error) {
 	//uniqueID := "" + feature.Properties.Vegnummer + "_" + feature.Properties.Frameter + "_" + feature.Properties.Tilmeter
 	//log.Println("Getting superficial deposit codes for feature: ", uniqueID)
 	//defer log.Println("Finished getting superficial deposit codes for feature: ", uniqueID)
@@ -97,7 +98,7 @@ func GetSuperficialDepositCodesForFeature(feature WFSFeature) ([]int, error) {
 }
 
 func getSuperficialDepositCodeForPoint(coordinate []float64) (int, error) {
-	results, err := QuerySpatialIndex(index, coordinate[0], coordinate[1])
+	results, err := structures.QuerySpatialIndex(index, coordinate[0], coordinate[1])
 	if err != nil {
 		return 0, err
 	}

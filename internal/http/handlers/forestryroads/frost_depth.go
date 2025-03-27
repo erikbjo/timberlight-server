@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
+	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 		coordinatesString = coordinatesString[:length-1]
 	}
 
-	body := nveFrostDepthRequest{
+	body := structures.NVEFrostDepthRequest{
 		Theme:            "gwb_frd",
 		StartDate:        date + "T00",
 		EndDate:          date + "T00",
@@ -65,7 +66,7 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	defer resp.Body.Close()
 
 	// Decode response
-	response := nveCellTimeSeriesFrostDepthResponse{}
+	response := structures.NVECellTimeSeriesFrostDepthResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		log.Println("Error decoding response: ", err)

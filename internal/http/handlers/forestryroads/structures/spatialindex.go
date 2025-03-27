@@ -1,4 +1,4 @@
-package forestryroads
+package structures
 
 import (
 	"fmt"

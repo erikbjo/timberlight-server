@@ -1,11 +1,20 @@
-package forestryroads
+package structures
 
 import (
+	"fmt"
 	"hash/crc32"
+	"math"
+	"runtime"
 	"sync"
 )
 
-func (sm *ShardedMap) getFeaturesFromShardedMap() map[string][]WFSFeature {
+type ShardedMap struct {
+	shards []map[string][]WFSFeature
+	locks  []sync.Mutex
+	size   int
+}
+
+func (sm *ShardedMap) GetFeaturesFromShardedMap() map[string][]WFSFeature {
 	result := make(map[string][]WFSFeature)
 
 	for i := 0; i < sm.size; i++ {
@@ -19,7 +28,7 @@ func (sm *ShardedMap) getFeaturesFromShardedMap() map[string][]WFSFeature {
 	return result
 }
 
-func (sm *ShardedMap) getHashSetFromShardedMap() map[string]bool {
+func (sm *ShardedMap) GetHashSetFromShardedMap() map[string]bool {
 	result := make(map[string]bool)
 
 	for i := 0; i < sm.size; i++ {
@@ -31,12 +40,6 @@ func (sm *ShardedMap) getHashSetFromShardedMap() map[string]bool {
 	}
 
 	return result
-}
-
-type ShardedMap struct {
-	shards []map[string][]WFSFeature
-	locks  []sync.Mutex
-	size   int
 }
 
 func NewShardedMap(size int) *ShardedMap {

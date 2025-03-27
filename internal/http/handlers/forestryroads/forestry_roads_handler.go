@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
+	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
 	"strings"
 	"time"
 )
@@ -14,7 +15,7 @@ import (
 var implementedMethods = []string{http.MethodGet}
 
 // index is a spatial index for the forestry roads
-var index *SpatialIndex
+var index *structures.SpatialIndex
 
 func init() {
 	shapefiles := []string{
@@ -24,7 +25,7 @@ func init() {
 	}
 
 	// Build spatial index
-	index = ReadShapeFilesAndBuildIndex(shapefiles)
+	index = structures.ReadShapeFilesAndBuildIndex(shapefiles)
 	log.Println("Index built successfully!")
 
 	log.Println("Forestry roads handler initialized")
@@ -94,7 +95,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode into struct
-	var wfsResponse WFSResponse
+	var wfsResponse structures.WFSResponse
 	err = json.NewDecoder(proxyResp.Body).Decode(&wfsResponse)
 	if err != nil {
 		http.Error(w, "Failed to decode external response", http.StatusInternalServerError)
@@ -109,12 +110,12 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// handle requests with multiple coordinates in the same grid cell
 
 	startProcessing := time.Now()
-	shardedMap := clusterWFSResponseToShardedMap(wfsResponse)
-	featureMap := shardedMap.getFeaturesFromShardedMap()
+	shardedMap := wfsResponse.ClusterWFSResponseToShardedMap()
+	featureMap := shardedMap.GetFeaturesFromShardedMap()
 	log.Printf("Processing features took: %v", time.Since(startProcessing))
 
 	startFrost := time.Now()
-	isFrozenMap, err := mapGridCentersToFrozenStatus(shardedMap.getHashSetFromShardedMap(), date)
+	isFrozenMap, err := mapGridCentersToFrozenStatus(shardedMap.GetHashSetFromShardedMap(), date)
 	if err != nil {
 		http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
 		log.Println("Error getting frost data: ", err)
@@ -122,7 +123,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Getting frost data took: %v", time.Since(startFrost))
 
-	transcribedFeatures := make([]WFSFeature, 0)
+	transcribedFeatures := make([]structures.WFSFeature, 0)
 
 	// Iterate over the featuremap and update the features with the frost data
 	startUpdate := time.Now()
@@ -131,7 +132,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
 			log.Println("Error getting frost data from isFrozenMap, value: ", isFrozen, " key: ", key)
-			return
+			// Not returning here, as we want to update the features with the frost data we have
 		}
 
 		for i := range features {
@@ -140,7 +141,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = UpdateSuperficialDepositCodesForFeatureArray(&transcribedFeatures)
+	err = updateSuperficialDepositCodesForFeatureArray(&transcribedFeatures)
 	if err != nil {
 		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
 		log.Println("Error updating superficial deposit data: ", err)
@@ -169,7 +170,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Total request timeDate: %v", time.Since(startTotal))
 }
 
-func ClassifyFeature(feature *WFSFeature) {
+func ClassifyFeature(feature *structures.WFSFeature) {
 	if feature.IsFrozen {
 		feature.Properties.Farge = []int{0, 0, 255}
 	} else {
