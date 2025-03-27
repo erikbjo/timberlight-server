@@ -13,6 +13,7 @@ import (
 type SpatialIndex struct {
 	index rtree.RTree
 	data  map[string]interface{}
+	mu    sync.RWMutex
 }
 
 // NewSpatialIndex creates a new spatial index
@@ -31,13 +32,15 @@ func (si *SpatialIndex) Insert(minX, minY, maxX, maxY float64, key string, value
 
 // Query finds all geometries that intersect with the given bounding box
 func (si *SpatialIndex) Query(minX, minY, maxX, maxY float64) []interface{} {
+	si.mu.RLock()
+	defer si.mu.RUnlock()
+
 	var results []interface{}
 
 	si.index.Search(
 		[2]float64{minX, minY},
 		[2]float64{maxX, maxY},
 		func(min, max [2]float64, data interface{}) bool {
-			log.Println("Querying ", minX, minY, maxX, maxY)
 			// Append the attributes associated with the key
 			if key, ok := data.(string); ok {
 				results = append(results, si.data[key])
@@ -101,7 +104,12 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 // QuerySpatialIndex checks if a point is inside any geometry in the spatial index
 func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{}, error) {
 	results := index.Query(x, y, x, y)
-	
+
+	if len(results) == 0 {
+		log.Println("No results returned for point: ", x, y)
+		return nil, fmt.Errorf("no superficial deposit results for point")
+	}
+
 	for _, result := range results {
 		if attributes, ok := result.(map[string]interface{}); ok {
 			return attributes, nil

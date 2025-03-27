@@ -20,7 +20,7 @@ func init() {
 	shapefiles := []string{
 		"data/Losmasse/LosmasseFlate_20240621",
 		"data/Losmasse/LosmasseFlate_20240622",
-		"data/Losmasse/LosmasseGrense_20240621",
+		//"data/Losmasse/LosmasseGrense_20240621",
 	}
 
 	// Build spatial index
@@ -130,7 +130,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		isFrozen, ok := isFrozenMap[key]
 		if !ok {
 			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-			log.Println("Error getting frost data: ", err)
+			log.Println("Error getting frost data from isFrozenMap, value: ", isFrozen, " key: ", key)
 			return
 		}
 
@@ -139,18 +139,16 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
 	}
-	log.Printf("Updating features took: %v", time.Since(startUpdate))
-	log.Printf("Total length of features: %v", len(transcribedFeatures))
 
-	// Test superficial deposits for first feature
-	codes, err := GetSuperficialDepositCodesForFeature(transcribedFeatures[0])
+	err = UpdateSuperficialDepositCodesForFeatureArray(&transcribedFeatures)
 	if err != nil {
-		http.Error(w, "Failed to get superficial deposit data", http.StatusInternalServerError)
-		log.Println("Error getting superficial deposit data: ", err)
+		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
+		log.Println("Error updating superficial deposit data: ", err)
 		return
 	}
 
-	log.Printf("Superficial deposit codes: %v", codes)
+	log.Printf("Updating features took: %v", time.Since(startUpdate))
+	log.Printf("Total length of features: %v", len(transcribedFeatures))
 
 	// Classify the features
 	for i := range transcribedFeatures {

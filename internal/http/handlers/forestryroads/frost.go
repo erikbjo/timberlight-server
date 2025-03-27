@@ -50,9 +50,6 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 
 	r.Header.Set("Content-Type", "application/json")
 
-	// Print whole request
-	log.Println("Request: ", r)
-
 	if err != nil {
 		log.Println("Error creating request: ", err)
 		return nil, err

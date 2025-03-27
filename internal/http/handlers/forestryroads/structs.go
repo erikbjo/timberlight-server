@@ -15,10 +15,11 @@ type WFSResponse struct {
 }
 
 type WFSFeature struct {
-	Type              string `json:"type"`
-	IsFrozen          bool   `json:"isFrozen"`
-	MiddleOfRoad25833 []int  `json:"middleOfRoad25833"`
-	Properties        struct {
+	Type                    string `json:"type"`
+	IsFrozen                bool   `json:"isFrozen"`
+	MiddleOfRoad25833       []int  `json:"middleOfRoad25833"`
+	SuperficialDepositCodes []int  `json:"superficialDepositCodes"`
+	Properties              struct {
 		Kommunenummer      string `json:"kommunenummer"`
 		Vegkategori        string `json:"vegkategori"`
 		Vegfase            string `json:"vegfase"`
