@@ -20,7 +20,6 @@ func init() {
 	shapefiles := []string{
 		"data/Losmasse/LosmasseFlate_20240621",
 		"data/Losmasse/LosmasseFlate_20240622",
-		//"data/Losmasse/LosmasseGrense_20240621",
 	}
 
 	// Build spatial index
