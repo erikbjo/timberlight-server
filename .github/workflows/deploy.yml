@@ -1,1 +1,40 @@
+name: 'deploy'
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '*.md'
+
+permissions:
+  contents: write
+  pull-requests: read
+  actions: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    name: 'build and push'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Login to GitHub Container Registry'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: 'Build Docker Image'
+        run: docker build -t ghcr.io/erikbjo/server:latest .
+
+      - name: 'Push Docker Image'
+        run: docker push ghcr.io/erikbjo/server:latest
+
+      - name: 'Trigger Infra Deploy'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repository: skogkursbachelor/infrastructure
+          event-type: app-updated
+          client-payload: '{"app": "${{ github.repository }}"}'
 

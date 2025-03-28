@@ -42,9 +42,11 @@ func (sm *ShardedMap) GetHashSetFromShardedMap() map[string]bool {
 func NewShardedMap(size int) *ShardedMap {
 	shards := make([]map[string][]WFSFeature, size)
 	locks := make([]sync.Mutex, size)
+
 	for i := range shards {
 		shards[i] = make(map[string][]WFSFeature)
 	}
+
 	return &ShardedMap{shards: shards, locks: locks, size: size}
 }
 
@@ -60,9 +62,11 @@ func (sm *ShardedMap) Set(key string, value WFSFeature) {
 	idx := sm.hashKey(key)
 	sm.locks[idx].Lock()
 	defer sm.locks[idx].Unlock()
+
 	if _, exists := sm.shards[idx][key]; !exists {
 		sm.shards[idx][key] = []WFSFeature{}
 	}
+
 	sm.shards[idx][key] = append(sm.shards[idx][key], value)
 }
 
