@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -15,7 +15,7 @@ func GetPort() string {
 
 	// Use default Port variable if not provided
 	if port == "" {
-		log.Println("$PORT has not been set. Default: " + DefaultPort)
+		log.Warn().Msg("$PORT has not been set. Default: " + DefaultPort)
 		port = DefaultPort
 	}
 

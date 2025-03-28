@@ -1,10 +1,7 @@
 package structures
 
 import (
-	"fmt"
 	"hash/crc32"
-	"math"
-	"runtime"
 	"sync"
 )
 

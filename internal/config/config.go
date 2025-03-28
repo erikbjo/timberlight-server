@@ -2,14 +2,14 @@ package config
 
 import (
 	"github.com/joho/godotenv"
-	"log"
+	"github.com/rs/zerolog/log"
 )
 
 func InitConfig() error {
 	// Load environment variables from .env file
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Println("Error loading .env file")
+		log.Error().Msg("Error loading .env file")
 		return err
 	}
 

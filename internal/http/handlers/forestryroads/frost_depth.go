@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
@@ -48,18 +48,17 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 		constants.NVEFrostDepthAPI,
 		bytes.NewBuffer(bodyJSON),
 	)
-
-	r.Header.Set("Content-Type", "application/json")
-
 	if err != nil {
-		log.Println("Error creating request: ", err)
+		log.Error().Msg("Failed to create request: " + err.Error())
 		return nil, err
 	}
+
+	r.Header.Set("Content-Type", "application/json")
 
 	// Do the request
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		log.Println("Error doing request: ", err)
+		log.Error().Msg("Failed to do request: " + err.Error())
 		return nil, err
 	}
 
@@ -69,7 +68,7 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	response := structures.NVECellTimeSeriesFrostDepthResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		log.Println("Error decoding response: ", err)
+		log.Error().Msg("Failed to decode response: " + err.Error())
 		return nil, err
 	}
 

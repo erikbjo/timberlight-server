@@ -1,26 +1,13 @@
 package server
 
 import (
-	"encoding/json"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
-	"os"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/http/handlers/forestryroads"
 	"skogkursbachelor/server/internal/http/handlers/proxy"
 	"skogkursbachelor/server/internal/utils"
 )
-
-func loadConfig(file string) (map[string]string, error) {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	var config map[string]string
-	err = json.Unmarshal(data, &config)
-	return config, err
-}
 
 // Start
 /*
@@ -31,9 +18,9 @@ func Start() {
 	port := utils.GetPort()
 
 	// Get list of proxy endpoints
-	proxies, err := loadConfig("proxy.json")
+	proxies, err := utils.LoadProxiesFromFile()
 	if err != nil {
-		log.Fatal("Error loading proxies: ", err)
+		log.Fatal().Msg("Error loading proxies: " + err.Error())
 	}
 
 	// Using mux to handle /'s and parameters
@@ -42,7 +29,7 @@ func Start() {
 	// Set up handler endpoints, with and without trailing slash
 	// Proxies
 	for path, remoteAddr := range proxies {
-		log.Println(path, "->", remoteAddr)
+		log.Info().Msg(path + "->" + remoteAddr)
 		p := &proxy.Proxy{RemoteAddr: remoteAddr}
 		mux.HandleFunc(constants.ProxyPath+path, p.ProxyHandler)
 	}
@@ -50,60 +37,7 @@ func Start() {
 	// Forestry roads
 	mux.HandleFunc(constants.ForestryRoadsPath, forestryroads.Handler)
 
-	// Test frost
-	//testFeature := forestryroads.WFSFeature{
-	//	Type: "Feature",
-	//	Properties: struct {
-	//		Kommunenummer      string `json:"kommunenummer"`
-	//		Vegkategori        string `json:"vegkategori"`
-	//		Vegfase            string `json:"vegfase"`
-	//		Vegnummer          string `json:"vegnummer"`
-	//		Strekningnummer    string `json:"strekningnummer"`
-	//		Delstrekningnummer string `json:"delstrekningnummer"`
-	//		Frameter           string `json:"frameter"`
-	//		Tilmeter           string `json:"tilmeter"`
-	//		Farge              []int  `json:"farge"`
-	//	}{
-	//		Kommunenummer:      "1234",
-	//		Vegkategori:        "V",
-	//		Vegfase:            "1",
-	//		Vegnummer:          "1",
-	//		Strekningnummer:    "1",
-	//		Delstrekningnummer: "1",
-	//		Frameter:           "1",
-	//		Tilmeter:           "1",
-	//		Farge:              []int{255, 255, 0},
-	//	},
-	//	Geometry: struct {
-	//		Type        string      `json:"type"`
-	//		Coordinates [][]float64 `json:"coordinates"`
-	//	}{
-	//		Type: "LineString",
-	//		Coordinates: [][]float64{
-	//			{1201320.00765347, 8535377.37942303},
-	//			{1201319.16169355, 8535358.78993844},
-	//			{1201318.00905091, 8535335.45018047},
-	//			{1201316.12991158, 8535313.91938757},
-	//		},
-	//	},
-	//}
-	//
-	//transformedCoordinates := make([][]int, len(testFeature.Geometry.Coordinates))
-	//for i := range testFeature.Geometry.Coordinates {
-	//	newX, newY, err := utils.TransformCoordinates(testFeature.Geometry.Coordinates[i], 3857, 25833)
-	//	if err != nil {
-	//		log.Fatal("Failed to transform coordinates: ", err)
-	//	}
-	//	transformedCoordinates[i] = []int{newX, newY}
-	//}
-	//log.Println(transformedCoordinates)
-
-	//log.Println(forestryroads.GetIsGroundFrozenAlongFeature(testFeature, "2025-03-18"))
-
-	//coords := []float64{1186244.298553594, 8579340.020600447}
-	//log.Println(forestryroads.GetIsGroundFrozenAlongFeature(coords, "2025-03-17"))
-
 	// Start server
-	log.Println("Starting server on port " + port + " ...")
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	log.Info().Msg("Starting server on port " + port + " ...")
+	log.Fatal().Msg(http.ListenAndServe(":"+port, mux).Error())
 }

@@ -3,12 +3,11 @@ package forestryroads
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
 	"strings"
-	"time"
 )
 
 // implementedMethods is a list of the implemented HTTP methods for the status endpoint.
@@ -26,9 +25,9 @@ func init() {
 
 	// Build spatial index
 	index = structures.ReadShapeFilesAndBuildIndex(shapefiles)
-	log.Println("Index built successfully!")
+	log.Info().Msg("Index built successfully!")
 
-	log.Println("Forestry roads handler initialized")
+	log.Info().Msg("Forestry roads handler initialized")
 }
 
 // Handler handles requests to the forestry road endpoint.
@@ -54,14 +53,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 // handleForestryRoadGet handles GET requests to the forestry road endpoint.
 func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
-	startTotal := time.Now()
-	// Pseudo code
-	// 1. Mirror the request to the remote server
-	// 2. Get the response from the remote server
-	// 3. Parse the response
-	// 4. Calculate trafficality
-	// 5. Return the response, with the calculated trafficality as a rgb value in the geojson response
-
 	// Get timeDate parameter from url
 	timeDate := r.URL.Query().Get("time")
 	if timeDate == "" {
@@ -72,9 +63,12 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// Split ISO string to get date. ex: 2021-03-01T00:00:00Z -> 2021-03-01
 	// Gets put into struct later
 	date := strings.Split(timeDate, "T")[0]
+	if date == "" {
+		http.Error(w, "Failed to split time string", http.StatusBadRequest)
+		return
+	}
 
 	// Mirror request to https://wms.geonorge.no/skwms1/wms.traktorveg_skogsbilveger
-	startRequest := time.Now()
 	proxyReq, err := http.NewRequest(
 		r.Method,
 		constants.ForestryRoadsWFS+"?"+r.URL.RawQuery,
@@ -82,7 +76,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		http.Error(w, "Failed to create internal request", http.StatusInternalServerError)
-		log.Println("Error creating request to GeoNorge for forestry roads: ", err)
+		log.Error().Msg("Error creating request to GeoNorge for forestry roads: " + err.Error())
 		return
 	}
 
@@ -90,7 +84,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	proxyResp, err := http.DefaultClient.Do(proxyReq)
 	if err != nil {
 		http.Error(w, "Failed to fetch data from external WMS server", http.StatusBadGateway)
-		log.Println("Error fetching data from GeoNorge WMS server: ", err)
+		log.Error().Msg("Error fetching data from GeoNorge WMS server: " + err.Error())
 		return
 	}
 
@@ -99,39 +93,33 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(proxyResp.Body).Decode(&wfsResponse)
 	if err != nil {
 		http.Error(w, "Failed to decode external response", http.StatusInternalServerError)
-		log.Println("Error decoding response from GeoNorge WMS server: ", err)
+		log.Error().Msg("Error decoding response from GeoNorge WMS server: " + err.Error())
 		return
 	}
-	log.Printf("Fetching data took: %v", time.Since(startRequest))
 
 	// Group the features by EPSG25833 coordinates, each with a cluster at coordinates: xxx500, yyy500
 	// This is a center point of a 1000x1000 meter square, and the center of SeNorge grid cells
 	// This is done to reduce the number of requests to the frost API, as the frost API is slow and cannot
 	// handle requests with multiple coordinates in the same grid cell
 
-	startProcessing := time.Now()
 	shardedMap := wfsResponse.ClusterWFSResponseToShardedMap()
 	featureMap := shardedMap.GetFeaturesFromShardedMap()
-	log.Printf("Processing features took: %v", time.Since(startProcessing))
 
-	startFrost := time.Now()
 	isFrozenMap, err := mapGridCentersToFrozenStatus(shardedMap.GetHashSetFromShardedMap(), date)
 	if err != nil {
 		http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-		log.Println("Error getting frost data: ", err)
+		log.Error().Msg("Error getting frost data: " + err.Error())
 		return
 	}
-	log.Printf("Getting frost data took: %v", time.Since(startFrost))
 
 	transcribedFeatures := make([]structures.WFSFeature, 0)
 
 	// Iterate over the featuremap and update the features with the frost data
-	startUpdate := time.Now()
 	for key, features := range featureMap {
 		isFrozen, ok := isFrozenMap[key]
 		if !ok {
 			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-			log.Println("Error getting frost data from isFrozenMap, value: ", isFrozen, " key: ", key)
+			log.Error().Msg("Error getting frost data from isFrozenMap, key: " + key)
 			// Not returning here, as we want to update the features with the frost data we have
 		}
 
@@ -144,16 +132,13 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	err = updateSuperficialDepositCodesForFeatureArray(&transcribedFeatures)
 	if err != nil {
 		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
-		log.Println("Error updating superficial deposit data: ", err)
+		log.Error().Msg("Error updating superficial deposit data: " + err.Error())
 		return
 	}
 
-	log.Printf("Updating features took: %v", time.Since(startUpdate))
-	log.Printf("Total length of features: %v", len(transcribedFeatures))
-
 	// Classify the features
 	for i := range transcribedFeatures {
-		ClassifyFeature(&transcribedFeatures[i])
+		classifyFeature(&transcribedFeatures[i])
 	}
 
 	// Replace the features with the transcribed features
@@ -163,14 +148,12 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(wfsResponse)
 	if err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		log.Println("Error encoding final response: ", err)
+		log.Error().Msg("Error encoding final response: " + err.Error())
 		return
 	}
-
-	log.Printf("Total request timeDate: %v", time.Since(startTotal))
 }
 
-func ClassifyFeature(feature *structures.WFSFeature) {
+func classifyFeature(feature *structures.WFSFeature) {
 	if feature.IsFrozen {
 		feature.Properties.Farge = []int{0, 0, 255}
 	} else {

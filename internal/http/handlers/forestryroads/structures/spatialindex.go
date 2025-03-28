@@ -2,10 +2,10 @@ package structures
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/tidwall/rtree"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-shapefile"
-	"log"
 	"sync"
 )
 
@@ -67,7 +67,7 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 				log.Printf("Failed to open %s: %v", f, err)
 				return
 			}
-			fmt.Printf("Read shapefile: %s\n\tNumRecords: %d\n", f, sf.NumRecords())
+			log.Info().Msgf("Read shapefile: %s NumRecords: %d", f, sf.NumRecords())
 
 			for i := 0; i < sf.NumRecords(); i++ {
 				attributes, geometry := sf.Record(i)
@@ -91,7 +91,7 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 						index.Insert(bbox.Min(0), bbox.Min(1), bbox.Max(0), bbox.Max(1), key, attributes)
 					}
 				default:
-					log.Printf("Unsupported geometry type in %s: %T", f, geometry)
+					log.Warn().Msgf("Unsupported geometry type in %s: %T", f, geometry)
 				}
 			}
 		}(file)
@@ -106,7 +106,7 @@ func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{
 	results := index.Query(x, y, x, y)
 
 	if len(results) == 0 {
-		log.Println("No results returned for point: ", x, y)
+		log.Warn().Msg("No results returned for point: " + fmt.Sprintf("%f, %f", x, y))
 		return nil, fmt.Errorf("no superficial deposit results for point")
 	}
 

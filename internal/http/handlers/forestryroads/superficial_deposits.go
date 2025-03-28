@@ -2,7 +2,7 @@ package forestryroads
 
 import (
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"runtime"
 	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
 	"slices"
@@ -51,18 +51,18 @@ func getSuperficialDepositCodesForFeature(feature structures.WFSFeature) ([]int,
 	// Get the road length
 	roadStart, err := strconv.Atoi(feature.Properties.Frameter)
 	if err != nil {
-		log.Println("Failed to convert frameter to int: ", feature.Properties.Frameter)
+		log.Error().Msg("Failed to convert frameter to int: " + feature.Properties.Frameter)
 		return nil, err
 	}
 	roadEnd, err := strconv.Atoi(feature.Properties.Tilmeter)
 	if err != nil {
-		log.Println("Failed to convert tilmeter to int: ", feature.Properties.Tilmeter)
+		log.Error().Msg("Failed to convert tilmeter to int: " + feature.Properties.Tilmeter)
 		return nil, err
 	}
 	roadLength := roadEnd - roadStart
 
 	if roadLength < 0 {
-		log.Println("Road length is negative: ", feature.Properties.Vegnummer)
+		log.Error().Msg("Road length is negative: " + feature.Properties.Vegnummer)
 		return nil, fmt.Errorf("road length is negative " + feature.Properties.Vegnummer)
 	}
 
@@ -104,14 +104,14 @@ func getSuperficialDepositCodeForPoint(coordinate []float64) (int, error) {
 	}
 
 	if results == nil {
-		log.Println("No results returned for point: ", coordinate)
+		log.Error().Msg("No results returned for point: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
 		return 0, fmt.Errorf("no results for point")
 	}
 
 	// Get the superficial deposit code, jordart:xx
 	code, ok := results["jordart"]
 	if !ok {
-		log.Println("Failed to get jordart from results on point: ", coordinate, " results: ", results)
+		log.Error().Msg("Failed to get jordart from results on point: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]) + " results: " + fmt.Sprintf("%v", results))
 		return 0, fmt.Errorf("no jordart in results")
 	}
 

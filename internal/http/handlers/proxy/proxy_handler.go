@@ -1,8 +1,8 @@
 package proxy
 
 import (
+	"github.com/rs/zerolog/log"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -12,11 +12,10 @@ type Proxy struct {
 }
 
 func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request for", p.RemoteAddr)
-
 	// Parse the remote address
 	remoteURL, err := url.Parse(p.RemoteAddr)
 	if err != nil {
+		log.Error().Msg("Error parsing remote address: " + err.Error())
 		http.Error(w, "Invalid remote address", http.StatusInternalServerError)
 		return
 	}
@@ -24,6 +23,7 @@ func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// Create the request
 	proxyReq, err := http.NewRequest(r.Method, remoteURL.String()+"?"+r.URL.RawQuery, r.Body)
 	if err != nil {
+		log.Error().Msg("Error creating request: " + err.Error())
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return
 	}
@@ -39,6 +39,7 @@ func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	resp, err := client.Do(proxyReq)
 	if err != nil {
+		log.Error().Msg("Error making request: " + err.Error())
 		http.Error(w, "Failed to fetch data from WMS server", http.StatusBadGateway)
 		return
 	}
