@@ -111,6 +111,13 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	soilMoistureMap, err := mapGridCentersToSoilMoisture(shardedMap.GetHashSetFromShardedMap(), date)
+	if err != nil {
+		http.Error(w, "Failed to get soil moisture data", http.StatusInternalServerError)
+		log.Error().Msg("Error getting soil moisture data: " + err.Error())
+		return
+	}
+
 	transcribedFeatures := make([]structures.WFSFeature, 0)
 
 	// Iterate over the featuremap and update the features with the frost data
@@ -122,8 +129,16 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 			// Not returning here, as we want to update the features with the frost data we have
 		}
 
+		soilMoisture, ok := soilMoistureMap[key]
+		if !ok {
+			http.Error(w, "Failed to get soil moisture data", http.StatusInternalServerError)
+			log.Error().Msg("Error getting soil moisture data from soilMoistureMap, key: " + key)
+			// Not returning here, as we want to update the features with the soil moisture data we have
+		}
+
 		for i := range features {
 			features[i].IsFrozen = isFrozen
+			features[i].SoilMoisture10cm40cm = soilMoisture
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
 	}

@@ -9,6 +9,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/tidwall/rtree v1.10.0
 	github.com/twpayne/go-geom v1.5.7
+	github.com/twpayne/go-proj/v11 v11.0.0
 	github.com/twpayne/go-shapefile v0.0.5
 )
 
