@@ -1,5 +1,5 @@
 #!/bin/bash
 
-unzip data/Losmasse/superficialdeposits_shape.zip -d data/Losmasse
+unzip /root/data/Losmasse/superficialdeposits_shape.zip -d /root/data/Losmasse
 
-rm data/Losmasse/superficialdeposits_shape.zip
+rm /root/data/Losmasse/superficialdeposits_shape.zip

@@ -11,25 +11,28 @@ RUN apt-get update && apt-get install -y libproj-dev pkg-config
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY data/Losmasse data/Losmasse
+COPY data/Losmasse/superficialdeposits_shape.zip data/Losmasse/superficialdeposits_shape.zip
 COPY . .
 
-RUN ls -la /app/data/Losmasse
+RUN ls -la data/Losmasse
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /api ./cmd/api/main.go
 
-FROM debian:bookworm-slim
+FROM ubuntu:25.04
 
 WORKDIR /root/
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y libproj-dev
+RUN apt-get update && apt-get install -y libproj-dev unzip && touch .env
 
 # Copy the built binary from builder stage
 COPY --from=builder /api /api
 COPY --from=builder /app/proxy.json proxy.json
-COPY --from=builder /app/data/Losmasse /root/data/Losmasse
-RUN touch .env
+COPY --from=builder /app/data/Losmasse data/Losmasse
+
+RUN ls -la data/Losmasse
+
+RUN ./data/Losmasse/prepare_data.sh
 
 EXPOSE 8080
 
