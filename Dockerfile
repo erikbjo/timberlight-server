@@ -3,14 +3,20 @@ FROM golang:1.24 AS builder
 LABEL authors="erbj@stud.ntnu.no,simonhou@stud.ntnu.no"
 LABEL stage=builder
 
-WORKDIR /server
+WORKDIR /
+
+RUN apt-get update && apt-get install -y libproj-dev pkg-config
+
+COPY ./go.mod ./go.sum ./
+
+RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o executable ./cmd/api/main.go
+RUN go build -o ./app ./cmd/api/main.go
 
-EXPOSE 8080
+FROM alpine:3.20
 
-RUN touch .env
+COPY --from=builder /app /app
 
-CMD ["./executable"]
+CMD [ "/app" ]
