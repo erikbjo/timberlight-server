@@ -24,6 +24,9 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
+      - name: 'Git LFS'
+        run: git lfs install && git lfs pull
+
       - name: 'Download superficial deposits data'
         run: ./data/Losmasse/prepare_data.sh
 
