@@ -3,20 +3,28 @@ FROM golang:1.24 AS builder
 LABEL authors="erbj@stud.ntnu.no,simonhou@stud.ntnu.no"
 LABEL stage=builder
 
-WORKDIR /
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y libproj-dev pkg-config
 
-COPY ./go.mod ./go.sum ./
-
+# Download Go modules
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app ./cmd/api/main.go
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /api ./cmd/api/main.go
 
-FROM alpine:3.20
+FROM debian:bookworm-slim
 
-COPY --from=builder /app /app
+WORKDIR /root/
 
-CMD [ "/app" ]
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y libproj-dev
+
+# Copy the built binary from builder stage
+COPY --from=builder /api /api
+
+EXPOSE 8080
+
+CMD [ "/api" ]
