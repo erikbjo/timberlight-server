@@ -24,9 +24,9 @@ RUN apt-get update && apt-get install -y libproj-dev
 
 # Copy the built binary from builder stage
 COPY --from=builder /api /api
+COPY --from=builder proxy.json proxy.json
+RUN touch .env
 
 EXPOSE 8080
-
-RUN touch .env
 
 CMD [ "/api" ]
