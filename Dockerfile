@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y libproj-dev pkg-config
 COPY go.mod go.sum ./
 RUN go mod download
 
+COPY data/Losmasse data/Losmasse
 COPY . .
 
 RUN ls -la /app/data/Losmasse
@@ -27,7 +28,7 @@ RUN apt-get update && apt-get install -y libproj-dev
 # Copy the built binary from builder stage
 COPY --from=builder /api /api
 COPY --from=builder /app/proxy.json proxy.json
-COPY --from=builder /app/data/Losmasse* data/Losmasse/
+COPY --from=builder /app/data/Losmasse /root/data/Losmasse
 RUN touch .env
 
 EXPOSE 8080
