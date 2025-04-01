@@ -25,8 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 'Download superficial deposits data'
-        run: ./prepare_data.sh
-        working-directory: data/Losmasse
+        run: ./data/Losmasse/prepare_data.sh
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
@@ -45,4 +44,4 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: erikbjo/server:latest
+          tags: ghcr.io/erikbjo/server:latest
