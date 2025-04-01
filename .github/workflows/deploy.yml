@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 'Download superficial deposits data'
-        run: ./get_data.sh
+        run: ./prepare_data.sh
         working-directory: data/Losmasse
 
       - name: 'Login to GitHub Container Registry'
