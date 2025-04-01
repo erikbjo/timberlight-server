@@ -27,7 +27,7 @@ jobs:
       - name: 'Git LFS'
         run: git lfs install && git lfs pull
 
-      - name: 'Download superficial deposits data'
+      - name: 'Prepare superficial deposits data'
         run: ./data/Losmasse/prepare_data.sh
 
       - name: 'Login to GitHub Container Registry'

@@ -27,4 +27,6 @@ COPY --from=builder /api /api
 
 EXPOSE 8080
 
+RUN touch .env
+
 CMD [ "/api" ]
