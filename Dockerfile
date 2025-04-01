@@ -13,6 +13,8 @@ RUN go mod download
 
 COPY . .
 
+RUN ls -la /app/data/Losmasse
+
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /api ./cmd/api/main.go
 
 FROM debian:bookworm-slim
