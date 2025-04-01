@@ -15,6 +15,8 @@ permissions:
 
 env:
   DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
+  SUPERFICIALDEPOSITS_KEY: ${{ secrets.SUPERFICIALDEPOSITS_KEY }}
+  SUPERFICIALDEPOSITS_IP: ${{ secrets.SUPERFICIALDEPOSITS_IP }}
 
 jobs:
   build-and-push:
@@ -24,8 +26,14 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
-      - name: 'Git LFS'
-        run: git lfs install && git lfs pull
+      - name: 'Prepare SSH'
+        run: mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts && ssh-keyscan -t rsa -H ${{ env.SUPERFICIALDEPOSITS_IP }} >> ~/.ssh/known_hosts
+
+      - name: 'Prepare key'
+        run: eval $(ssh-agent) && echo "${{ env.SUPERFICIALDEPOSITS_KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa && ssh-add ~/.ssh/id_rsa
+
+      - name: 'Download superficial deposits data'
+        run: scp ubuntu@${{ env.SUPERFICIALDEPOSITS_IP }}:~/superficialdeposits_shape.zip ./data/Losmasse
 
       - name: 'Prepare superficial deposits data'
         run: ./data/Losmasse/prepare_data.sh
