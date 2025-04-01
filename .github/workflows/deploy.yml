@@ -13,6 +13,9 @@ permissions:
   pull-requests: read
   actions: write
 
+env:
+  DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -21,20 +24,25 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
+      - name: 'Download superficial deposits data'
+        run: ./get_data.sh
+        working-directory: data/Losmasse
+
       - name: 'Login to GitHub Container Registry'
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: 'Build Docker Image'
-        run: docker build -t ghcr.io/erikbjo/server:latest .
-
-      - name: 'Push Docker Image'
-        run: docker push ghcr.io/erikbjo/server:latest
-
-      - name: 'Trigger Infra Deploy'
-        uses: peter-evans/repository-dispatch@v3
+        uses: docker/login-action@v3
         with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          repository: skogkursbachelor/infrastructure
-          event-type: app-updated
-          client-payload: '{"app": "${{ github.repository }}"}'
+          registry: ghcr.io
+          username: erikbjo
+          password: ${{ env.DOCKER_PAT }}
 
+      - name: 'Set up QEMU'
+        uses: docker/setup-qemu-action@v3
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+
+      - name: 'Build and push'
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: erikbjo/server:latest
