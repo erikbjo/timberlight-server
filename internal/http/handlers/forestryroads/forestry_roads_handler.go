@@ -55,6 +55,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// Get timeDate parameter from url
 	timeDate := r.URL.Query().Get("time")
 	if timeDate == "" {
+		log.Warn().Str("request", r.URL.String()).Msg("Missing time URL parameter")
 		http.Error(w, "Missing time URL parameter", http.StatusBadRequest)
 		return
 	}
@@ -63,6 +64,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// Gets put into struct later
 	date := strings.Split(timeDate, "T")[0]
 	if date == "" {
+		log.Warn().Str("request", r.URL.String()).Msg("Failed to split time string")
 		http.Error(w, "Failed to split time string", http.StatusBadRequest)
 		return
 	}
