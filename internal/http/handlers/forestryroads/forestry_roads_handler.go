@@ -32,7 +32,10 @@ func init() {
 // Handler handles requests to the forestry road endpoint.
 // Currently only GET requests are supported.
 func Handler(w http.ResponseWriter, r *http.Request) {
+	// Enable CORS
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("content-type", "application/json")
+	
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
