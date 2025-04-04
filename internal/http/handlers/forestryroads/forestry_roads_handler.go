@@ -35,7 +35,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Enable CORS
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("content-type", "application/json")
-	
+
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -116,10 +116,10 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	soilMoistureMap, err := mapGridCentersToSoilMoisture(shardedMap.GetHashSetFromShardedMap(), date)
+	soilTempMap, err := mapGridCentersToDeepSoilTemp(shardedMap.GetHashSetFromShardedMap(), date)
 	if err != nil {
-		http.Error(w, "Failed to get soil moisture data", http.StatusInternalServerError)
-		log.Error().Msg("Error getting soil moisture data: " + err.Error())
+		http.Error(w, "Failed to get soil temperature data", http.StatusInternalServerError)
+		log.Error().Msg("Error getting soil temperature data: " + err.Error())
 		return
 	}
 
@@ -134,16 +134,16 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 			// Not returning here, as we want to update the features with the frost data we have
 		}
 
-		soilMoisture, ok := soilMoistureMap[key]
+		soilTemp, ok := soilTempMap[key]
 		if !ok {
-			http.Error(w, "Failed to get soil moisture data", http.StatusInternalServerError)
-			log.Error().Msg("Error getting soil moisture data from soilMoistureMap, key: " + key)
-			// Not returning here, as we want to update the features with the soil moisture data we have
+			http.Error(w, "Failed to get soil temperature data", http.StatusInternalServerError)
+			log.Error().Msg("Error getting soil temperature data from soilTempMap, key: " + key)
+			// Not returning here, as we want to update the features with the soil data we have
 		}
 
 		for i := range features {
 			features[i].IsFrozen = isFrozen
-			features[i].SoilMoisture10cm40cm = soilMoisture
+			features[i].SoilTemperature54cm = soilTemp
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
 	}
@@ -155,11 +155,6 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Classify the features
-	for i := range transcribedFeatures {
-		classifyFeature(&transcribedFeatures[i])
-	}
-
 	// Replace the features with the transcribed features
 	wfsResponse.Features = transcribedFeatures
 
@@ -169,13 +164,5 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		log.Error().Msg("Error encoding final response: " + err.Error())
 		return
-	}
-}
-
-func classifyFeature(feature *structures.WFSFeature) {
-	if feature.IsFrozen {
-		feature.Properties.Farge = []int{0, 0, 255}
-	} else {
-		feature.Properties.Farge = []int{255, 0, 0}
 	}
 }

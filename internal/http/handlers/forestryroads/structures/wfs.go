@@ -73,7 +73,7 @@ type WFSFeature struct {
 	IsFrozen                bool    `json:"isFrozen"`
 	MiddleOfRoad25833       []int   `json:"middleOfRoad25833"`
 	SuperficialDepositCodes []int   `json:"superficialDepositCodes"`
-	SoilMoisture10cm40cm    float64 `json:"soilMoisture10cm40cm"`
+	SoilTemperature54cm     float64 `json:"soilTemperature54cm"`
 	Properties              struct {
 		Kommunenummer      string `json:"kommunenummer"`
 		Vegkategori        string `json:"vegkategori"`
@@ -83,7 +83,6 @@ type WFSFeature struct {
 		Delstrekningnummer string `json:"delstrekningnummer"`
 		Frameter           string `json:"frameter"`
 		Tilmeter           string `json:"tilmeter"`
-		Farge              []int  `json:"farge"`
 	} `json:"properties"`
 	Geometry struct {
 		Type        string      `json:"type"`

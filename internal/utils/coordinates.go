@@ -36,7 +36,7 @@ func TransformCoordinates(coordinates []float64, epsgFrom, epsgTo int) (int, int
 	return int(math.Round(newCoords.X())), int(math.Round(newCoords.Y())), nil
 }
 
-func Transform25833ToLongLatRoundedToNearest50Deg(coordinates []float64) (float64, float64, error) {
+func Transform25833ToLongLatRoundedToNearest25Deg(coordinates []float64) (float64, float64, error) {
 	oldCoords := proj.NewCoord(coordinates[0], coordinates[1], 0, 0)
 	newCoords, err := pj25833ToLongLat.Forward(oldCoords)
 	if err != nil {
@@ -44,7 +44,7 @@ func Transform25833ToLongLatRoundedToNearest50Deg(coordinates []float64) (float6
 		return 0, 0, err
 	}
 
-	return RoundToNearest50Deg(newCoords.X()), RoundToNearest50Deg(newCoords.Y()), nil
+	return RoundToNearest25Deg(newCoords.X()), RoundToNearest25Deg(newCoords.Y()), nil
 }
 
 func RoundToNearest25Deg(coordinate float64) float64 {

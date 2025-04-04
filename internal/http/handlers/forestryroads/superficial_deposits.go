@@ -30,6 +30,7 @@ func updateSuperficialDepositCodesForFeatureArray(featureArray *[]structures.WFS
 
 			codes, err := getSuperficialDepositCodesForFeature(*feature)
 			if err != nil {
+				log.Error().Msg("Failed to get superficial deposit codes for feature: " + feature.Properties.Vegnummer + " error: " + err.Error())
 				return
 			}
 
@@ -42,10 +43,6 @@ func updateSuperficialDepositCodesForFeatureArray(featureArray *[]structures.WFS
 }
 
 func getSuperficialDepositCodesForFeature(feature structures.WFSFeature) ([]int, error) {
-	//uniqueID := "" + feature.Properties.Vegnummer + "_" + feature.Properties.Frameter + "_" + feature.Properties.Tilmeter
-	//log.Println("Getting superficial deposit codes for feature: ", uniqueID)
-	//defer log.Println("Finished getting superficial deposit codes for feature: ", uniqueID)
-
 	var codes []int
 
 	// Get the road length
@@ -86,7 +83,6 @@ func getSuperficialDepositCodesForFeature(feature structures.WFSFeature) ([]int,
 		// Get the superficial deposit code for the current point
 		code, err := getSuperficialDepositCodeForPoint(feature.Geometry.Coordinates[i])
 		if err != nil {
-
 			return nil, err
 		}
 		if !slices.Contains(codes, code) {
