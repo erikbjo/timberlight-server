@@ -1,6 +1,6 @@
 package structures
 
-type NVEFrostDepthRequest struct {
+type NVEFMultiPointTimeSeriesRequest struct {
 	Theme            string `json:"Theme"`
 	StartDate        string `json:"StartDate"`
 	EndDate          string `json:"EndDate"`
@@ -8,7 +8,7 @@ type NVEFrostDepthRequest struct {
 	MapCoordinateCsv string `json:"MapCoordinateCsv"`
 }
 
-type NVECellTimeSeriesFrostDepthResponse struct {
+type NVEMultiPointTimeSeriesResponse struct {
 	CellTimeSeries    []cellTimeSeries `json:"CellTimeSeries"`
 	Theme             string           `json:"Theme"`
 	FullName          interface{}      `json:"FullName"`

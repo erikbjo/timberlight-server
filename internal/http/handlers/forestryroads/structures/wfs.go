@@ -70,7 +70,8 @@ func roundToNearest500(n int) int {
 
 type WFSFeature struct {
 	Type                    string  `json:"type"`
-	IsFrozen                bool    `json:"isFrozen"`
+	FrostDepth              float64 `json:"frostDepth"`
+	WaterSaturation         float64 `json:"waterSaturation"`
 	MiddleOfRoad25833       []int   `json:"middleOfRoad25833"`
 	SuperficialDepositCodes []int   `json:"superficialDepositCodes"`
 	SoilTemperature54cm     float64 `json:"soilTemperature54cm"`

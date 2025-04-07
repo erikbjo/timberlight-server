@@ -109,10 +109,17 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	shardedMap := wfsResponse.ClusterWFSResponseToShardedMap()
 	featureMap := shardedMap.GetFeaturesFromShardedMap()
 
-	isFrozenMap, err := mapGridCentersToFrozenStatus(shardedMap.GetHashSetFromShardedMap(), date)
+	frostDepthMap, err := mapGridCentersToFrozenStatus(shardedMap.GetHashSetFromShardedMap(), date)
 	if err != nil {
 		http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
 		log.Error().Msg("Error getting frost data: " + err.Error())
+		return
+	}
+
+	waterSaturationMap, err := mapGridCentersToWaterSaturation(shardedMap.GetHashSetFromShardedMap(), date)
+	if err != nil {
+		http.Error(w, "Failed to get water saturation data", http.StatusInternalServerError)
+		log.Error().Msg("Error getting water saturation data: " + err.Error())
 		return
 	}
 
@@ -127,22 +134,28 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 
 	// Iterate over the featuremap and update the features with the frost data
 	for key, features := range featureMap {
-		isFrozen, ok := isFrozenMap[key]
+		frostDepth, ok := frostDepthMap[key]
 		if !ok {
 			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-			log.Error().Msg("Error getting frost data from isFrozenMap, key: " + key)
+			log.Error().Msg("Error getting frost data from frostDepthMap, key: " + key)
 			// Not returning here, as we want to update the features with the frost data we have
+		}
+
+		waterSaturation, ok := waterSaturationMap[key]
+		if !ok {
+			http.Error(w, "Failed to get water saturation data", http.StatusInternalServerError)
+			log.Error().Msg("Error getting water saturation data from waterSaturationMap, key: " + key)
 		}
 
 		soilTemp, ok := soilTempMap[key]
 		if !ok {
 			http.Error(w, "Failed to get soil temperature data", http.StatusInternalServerError)
 			log.Error().Msg("Error getting soil temperature data from soilTempMap, key: " + key)
-			// Not returning here, as we want to update the features with the soil data we have
 		}
 
 		for i := range features {
-			features[i].IsFrozen = isFrozen
+			features[i].FrostDepth = frostDepth
+			features[i].WaterSaturation = waterSaturation
 			features[i].SoilTemperature54cm = soilTemp
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
