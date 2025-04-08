@@ -1,4 +1,4 @@
-package forestryroads
+package senorge
 
 import (
 	"bytes"
@@ -7,11 +7,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
-	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
+	"skogkursbachelor/server/internal/models"
 	"strings"
 )
 
-func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[string]float64, error) {
+func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[string]float64, error) {
 	// Coordinates is in format "X1 Y1, X2 Y2, ..."
 	stringBuilder := strings.Builder{}
 
@@ -28,7 +28,7 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 		coordinatesString = coordinatesString[:length-1]
 	}
 
-	body := structures.NVEFMultiPointTimeSeriesRequest{
+	body := models.NVEFMultiPointTimeSeriesRequest{
 		Theme:            constants.SeNorgeFrostDepthTheme,
 		StartDate:        date + "T12",
 		EndDate:          date + "T12",
@@ -64,7 +64,7 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	defer resp.Body.Close()
 
 	// Decode response
-	response := structures.NVEMultiPointTimeSeriesResponse{}
+	response := models.NVEMultiPointTimeSeriesResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		log.Error().Msg("Failed to decode response: " + err.Error())
@@ -86,7 +86,7 @@ func mapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	return frostDepthMap, nil
 }
 
-func mapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (map[string]float64, error) {
+func MapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (map[string]float64, error) {
 	// Coordinates is in format "X1 Y1, X2 Y2, ..."
 	stringBuilder := strings.Builder{}
 
@@ -103,7 +103,7 @@ func mapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (m
 		coordinatesString = coordinatesString[:length-1]
 	}
 
-	body := structures.NVEFMultiPointTimeSeriesRequest{
+	body := models.NVEFMultiPointTimeSeriesRequest{
 		Theme:            constants.SeNorgeWaterSaturationTheme,
 		StartDate:        date + "T12",
 		EndDate:          date + "T12",
@@ -139,7 +139,7 @@ func mapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (m
 	defer resp.Body.Close()
 
 	// Decode response
-	response := structures.NVEMultiPointTimeSeriesResponse{}
+	response := models.NVEMultiPointTimeSeriesResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		log.Error().Msg("Failed to decode response: " + err.Error())

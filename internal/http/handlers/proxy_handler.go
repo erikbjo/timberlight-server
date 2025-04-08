@@ -1,4 +1,4 @@
-package proxy
+package handlers
 
 import (
 	"github.com/rs/zerolog/log"

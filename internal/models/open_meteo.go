@@ -1,4 +1,4 @@
-package structures
+package models
 
 type OpenMeteoResponse struct {
 	Latitude    float64 `json:"latitude"`

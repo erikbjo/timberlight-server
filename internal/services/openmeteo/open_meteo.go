@@ -1,4 +1,4 @@
-package forestryroads
+package openmeteo
 
 import (
 	"encoding/json"
@@ -6,13 +6,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
-	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
+	"skogkursbachelor/server/internal/models"
 	"skogkursbachelor/server/internal/utils"
 	"strconv"
 	"strings"
 )
 
-func mapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (map[string]float64, error) {
+func MapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (map[string]float64, error) {
 	// Cluster the coordinates into 25 degree cells
 	clusteredMap := clusterCoordinates(gridCentersMap)
 	soilTempMapLatLong := make(map[string]float64)
@@ -83,7 +83,7 @@ func mapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (
 	defer resp.Body.Close()
 
 	// Decode response
-	var response []structures.OpenMeteoDeepSoilTempResponse
+	var response []models.OpenMeteoDeepSoilTempResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		log.Error().Msg("Failed to decode response: " + err.Error())

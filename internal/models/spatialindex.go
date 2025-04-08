@@ -1,4 +1,4 @@
-package structures
+package models
 
 import (
 	"fmt"
@@ -11,22 +11,22 @@ import (
 
 // SpatialIndex represents an R-tree for efficient spatial queries
 type SpatialIndex struct {
-	index rtree.RTree
-	data  map[string]interface{}
-	mu    sync.RWMutex
+	tree rtree.RTree
+	data map[string]interface{}
+	mu   sync.RWMutex
 }
 
 // NewSpatialIndex creates a new spatial index
 func NewSpatialIndex() *SpatialIndex {
 	return &SpatialIndex{
-		index: rtree.RTree{},
-		data:  make(map[string]interface{}),
+		tree: rtree.RTree{},
+		data: make(map[string]interface{}),
 	}
 }
 
 // Insert adds a geometry and its attributes to the spatial index
 func (si *SpatialIndex) Insert(minX, minY, maxX, maxY float64, key string, value interface{}) {
-	si.index.Insert([2]float64{minX, minY}, [2]float64{maxX, maxY}, key)
+	si.tree.Insert([2]float64{minX, minY}, [2]float64{maxX, maxY}, key)
 	si.data[key] = value
 }
 
@@ -37,7 +37,7 @@ func (si *SpatialIndex) Query(minX, minY, maxX, maxY float64) []interface{} {
 
 	var results []interface{}
 
-	si.index.Search(
+	si.tree.Search(
 		[2]float64{minX, minY},
 		[2]float64{maxX, maxY},
 		func(min, max [2]float64, data interface{}) bool {
@@ -64,10 +64,10 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 
 			sf, err := shapefile.Read(f, nil)
 			if err != nil {
-				log.Printf("Failed to open %s: %v", f, err)
+				log.Error().Msgf("Error reading shape file %s: %s", f, err.Error())
 				return
 			}
-			log.Info().Msgf("Read shapefile: %s NumRecords: %d", f, sf.NumRecords())
+			log.Info().Msgf("Read shapefile: %s, NumRecords: %d, building r-tree...", f, sf.NumRecords())
 
 			for i := 0; i < sf.NumRecords(); i++ {
 				attributes, geometry := sf.Record(i)
@@ -118,5 +118,5 @@ func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{
 		}
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf("no results for point %f, %f", x, y)
 }

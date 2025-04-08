@@ -1,4 +1,4 @@
-package structures
+package models
 
 import (
 	"hash/crc32"
@@ -6,13 +6,13 @@ import (
 )
 
 type ShardedMap struct {
-	shards []map[string][]WFSFeature
+	shards []map[string][]ForestRoad
 	locks  []sync.Mutex
 	size   int
 }
 
-func (sm *ShardedMap) GetFeaturesFromShardedMap() map[string][]WFSFeature {
-	result := make(map[string][]WFSFeature)
+func (sm *ShardedMap) GetFeaturesFromShardedMap() map[string][]ForestRoad {
+	result := make(map[string][]ForestRoad)
 
 	for i := 0; i < sm.size; i++ {
 		sm.locks[i].Lock()
@@ -40,17 +40,17 @@ func (sm *ShardedMap) GetHashSetFromShardedMap() map[string]bool {
 }
 
 func NewShardedMap(size int) *ShardedMap {
-	shards := make([]map[string][]WFSFeature, size)
+	shards := make([]map[string][]ForestRoad, size)
 	locks := make([]sync.Mutex, size)
 
 	for i := range shards {
-		shards[i] = make(map[string][]WFSFeature)
+		shards[i] = make(map[string][]ForestRoad)
 	}
 
 	return &ShardedMap{shards: shards, locks: locks, size: size}
 }
 
-func (sm *ShardedMap) Get(key string) ([]WFSFeature, bool) {
+func (sm *ShardedMap) Get(key string) ([]ForestRoad, bool) {
 	idx := sm.hashKey(key)
 	sm.locks[idx].Lock()
 	defer sm.locks[idx].Unlock()
@@ -58,13 +58,13 @@ func (sm *ShardedMap) Get(key string) ([]WFSFeature, bool) {
 	return val, ok
 }
 
-func (sm *ShardedMap) Set(key string, value WFSFeature) {
+func (sm *ShardedMap) Set(key string, value ForestRoad) {
 	idx := sm.hashKey(key)
 	sm.locks[idx].Lock()
 	defer sm.locks[idx].Unlock()
 
 	if _, exists := sm.shards[idx][key]; !exists {
-		sm.shards[idx][key] = []WFSFeature{}
+		sm.shards[idx][key] = []ForestRoad{}
 	}
 
 	sm.shards[idx][key] = append(sm.shards[idx][key], value)

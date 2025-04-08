@@ -1,48 +1,59 @@
-package forestryroads
+package superficialdeposits
 
 import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"runtime"
-	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
+	"skogkursbachelor/server/internal/models"
 	"slices"
 	"strconv"
 	"sync"
 )
 
-func updateSuperficialDepositCodesForFeatureArray(featureArray *[]structures.WFSFeature) error {
-	//log.Println("Starting updateSuperficialDepositCodesForFeatureArray")
-	//defer log.Println("Finished updateSuperficialDepositCodesForFeatureArray")
+// index is a spatial index for the forestry roads
+var index *models.SpatialIndex
 
+func init() {
+	shapefiles := []string{
+		"data/Losmasse/LosmasseFlate_20240621",
+		"data/Losmasse/LosmasseFlate_20240622",
+	}
+
+	// Build spatial index
+	index = models.ReadShapeFilesAndBuildIndex(shapefiles)
+	log.Info().Msg("Index built successfully!")
+}
+
+func UpdateSuperficialDepositCodesForFeatures(features *[]models.ForestRoad) error {
 	semaphore := make(chan struct{}, runtime.NumCPU())
 	var wg sync.WaitGroup
 
-	for i := 0; i < len(*featureArray); i++ {
+	for i := 0; i < len(*features); i++ {
 		wg.Add(1)
 
 		// Reserve a slot
 		semaphore <- struct{}{}
 
-		go func(feature *structures.WFSFeature) {
+		go func(feature *models.ForestRoad) {
 			defer wg.Done()
 			// Release the slot
 			defer func() { <-semaphore }()
 
 			codes, err := getSuperficialDepositCodesForFeature(*feature)
 			if err != nil {
-				log.Error().Msg("Failed to get superficial deposit codes for feature: " + feature.Properties.Vegnummer + " error: " + err.Error())
+				log.Error().Msg("Failed to get superficial deposit codes: " + err.Error())
 				return
 			}
 
 			feature.SuperficialDepositCodes = codes
-		}(&(*featureArray)[i])
+		}(&(*features)[i])
 	}
 
 	wg.Wait()
 	return nil
 }
 
-func getSuperficialDepositCodesForFeature(feature structures.WFSFeature) ([]int, error) {
+func getSuperficialDepositCodesForFeature(feature models.ForestRoad) ([]int, error) {
 	var codes []int
 
 	// Get the road length
@@ -94,7 +105,7 @@ func getSuperficialDepositCodesForFeature(feature structures.WFSFeature) ([]int,
 }
 
 func getSuperficialDepositCodeForPoint(coordinate []float64) (int, error) {
-	results, err := structures.QuerySpatialIndex(index, coordinate[0], coordinate[1])
+	results, err := models.QuerySpatialIndex(index, coordinate[0], coordinate[1])
 	if err != nil {
 		return 0, err
 	}

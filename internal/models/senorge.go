@@ -1,4 +1,4 @@
-package structures
+package models
 
 type NVEFMultiPointTimeSeriesRequest struct {
 	Theme            string `json:"Theme"`

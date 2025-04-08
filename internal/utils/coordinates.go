@@ -46,11 +46,3 @@ func Transform25833ToLongLatRoundedToNearest25Deg(coordinates []float64) (float6
 
 	return RoundToNearest25Deg(newCoords.X()), RoundToNearest25Deg(newCoords.Y()), nil
 }
-
-func RoundToNearest25Deg(coordinate float64) float64 {
-	return (math.Round(coordinate * 4)) / 4
-}
-
-func RoundToNearest50Deg(coordinate float64) float64 {
-	return (math.Round(coordinate * 2)) / 2
-}
