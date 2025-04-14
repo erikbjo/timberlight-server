@@ -47,7 +47,7 @@ func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// Copy response headers
 	for key, values := range resp.Header {
 		for _, value := range values {
-			w.Header().Add(key, value)
+			w.Header().Set(key, value)
 		}
 	}
 

@@ -31,6 +31,10 @@ func Start() {
 		mux.HandleFunc(constants.ProxyPath+path, p.ProxyHandler)
 	}
 
+	// Base layer
+	mux.HandleFunc(constants.BaseLayerPath+"/{type}/{abc}/{z}/{x}/{y}", handlers.BaseLayerHandler)
+	mux.HandleFunc(constants.BaseLayerPath+"/{type}/{abc}/{z}/{x}", handlers.BaseLayerHandler)
+
 	// Forestry roads
 	mux.HandleFunc(constants.ForestryRoadsPath, handlers.ForestryRoadsHandler)
 
