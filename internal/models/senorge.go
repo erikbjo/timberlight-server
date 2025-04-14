@@ -1,5 +1,6 @@
 package models
 
+// NVEFMultiPointTimeSeriesRequest represents the request structure for NVEF MultiPoint Time Series.
 type NVEFMultiPointTimeSeriesRequest struct {
 	Theme            string `json:"Theme"`
 	StartDate        string `json:"StartDate"`
@@ -8,6 +9,7 @@ type NVEFMultiPointTimeSeriesRequest struct {
 	MapCoordinateCsv string `json:"MapCoordinateCsv"`
 }
 
+// NVEMultiPointTimeSeriesResponse represents the response structure for NVE MultiPoint Time Series.
 type NVEMultiPointTimeSeriesResponse struct {
 	CellTimeSeries    []cellTimeSeries `json:"CellTimeSeries"`
 	Theme             string           `json:"Theme"`
@@ -20,6 +22,7 @@ type NVEMultiPointTimeSeriesResponse struct {
 	TimeResolution    int              `json:"TimeResolution"`
 }
 
+// cellTimeSeries represents the time series data for a specific cell in the NVE response.
 type cellTimeSeries struct {
 	X         int       `json:"X"`
 	Y         int       `json:"Y"`

@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+// WFSResponse represents the response from a WFS (Web Feature Service) request,
+// containing information about forest roads and their properties.
 type WFSResponse struct {
 	Type          string `json:"type"`
 	NumberMatched int    `json:"numberMatched"`
@@ -22,6 +24,7 @@ type WFSResponse struct {
 	Features []ForestRoad `json:"features"`
 }
 
+// ForestRoad represents a forest road feature with its properties and geometry.
 type ForestRoad struct {
 	Type                    string  `json:"type"`
 	FrostDepth              float64 `json:"frostDepth"`
@@ -48,31 +51,24 @@ type ForestRoad struct {
 // Returns a sharded map with the features clustered by coordinates.
 func (wfsResponse WFSResponse) ClusterWFSResponseToShardedMap() *ShardedMap {
 	featureMap := NewShardedMap(runtime.NumCPU())
-
 	semaphore := make(chan struct{}, runtime.NumCPU())
 	var wg sync.WaitGroup
 
 	for _, feature := range wfsResponse.Features {
-		// Reserve a slot
 		semaphore <- struct{}{}
 		wg.Add(1)
 
 		go func(feature ForestRoad) {
 			defer wg.Done()
-			// Release the slot
 			defer func() { <-semaphore }()
 
-			// Use middle index of coordinates as the middle of the road
 			middleIndex := len(feature.Geometry.Coordinates) / 2
 			coordinates := feature.Geometry.Coordinates[middleIndex]
 
-			// Round the coordinates to the nearest 500 to cluster into 1000x1000 meter squares
-			// The center of the square is the center of the SeNorge grid cell
 			roundedX := utils.RoundToNearest500(int(math.Round(coordinates[0])))
 			roundedY := utils.RoundToNearest500(int(math.Round(coordinates[1])))
 			roundedCoordinates := fmt.Sprintf("%d,%d", roundedX, roundedY)
 
-			// Add the feature to the sharded map
 			featureMap.Set(roundedCoordinates, feature)
 		}(feature)
 	}
