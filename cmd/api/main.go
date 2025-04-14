@@ -9,12 +9,14 @@ import (
 	"skogkursbachelor/server/internal/http/server"
 )
 
-func init() {
+// Start the server
+func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	if err := config.InitConfig(); err != nil {
 		log.Fatal().Msgf("Error loading configuration: %s", err)
 	}
 
-	// Logger
 	loggerLevel := os.Getenv("LOGGER_LEVEL")
 	if loggerLevel == "" {
 		loggerLevel = "info"
@@ -27,9 +29,6 @@ func init() {
 	log.Info().Msgf("Logger level set to %s", lvl)
 
 	log.Info().Msg("Configuration loaded successfully")
-}
 
-// Start the server
-func main() {
 	server.Start()
 }

@@ -13,8 +13,8 @@ import (
 	"strings"
 )
 
-// implementedMethods is a list of the implemented HTTP methods for the status endpoint.
-var implementedMethods = []string{http.MethodGet}
+// _implementedMethods is a list of the implemented HTTP methods for the status endpoint.
+var _implementedMethods = []string{http.MethodGet}
 
 // ForestryRoadsHandler handles requests to the forestry road endpoint.
 // Currently only GET requests are supported.
@@ -33,7 +33,7 @@ func ForestryRoadsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(
 			w, fmt.Sprintf(
 				"REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
-				implementedMethods,
+				_implementedMethods,
 			), http.StatusNotImplemented,
 		)
 		return
@@ -146,7 +146,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = superficialdeposits.UpdateSuperficialDepositCodesForFeatures(&transcribedFeatures)
+	err = superficialdeposits.UpdateSuperficialDepositCodes(&transcribedFeatures)
 	if err != nil {
 		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
 		log.Error().Msg("Error updating superficial deposit data: " + err.Error())
