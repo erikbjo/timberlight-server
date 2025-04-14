@@ -11,6 +11,8 @@ import (
 	"skogkursbachelor/server/internal/services/senorge"
 	"skogkursbachelor/server/internal/services/superficialdeposits"
 	"strings"
+	"sync"
+	_ "sync"
 )
 
 // _implementedMethods is a list of the implemented HTTP methods for the status endpoint.
@@ -93,29 +95,38 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 
 	shardedMap := wfsResponse.ClusterWFSResponseToShardedMap()
 	featureMap := shardedMap.GetFeaturesFromShardedMap()
+	hashSet := shardedMap.GetHashSetFromShardedMap()
 
-	frostDepthMap, err := senorge.MapGridCentersToFrozenStatus(shardedMap.GetHashSetFromShardedMap(), date)
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	var frostDepthMap map[string]float64
+	go func() {
+		defer wg.Done()
+		frostDepthMap, err = senorge.MapGridCentersToFrozenStatus(hashSet, date)
+	}()
+
+	var waterSaturationMap map[string]float64
+	go func() {
+		defer wg.Done()
+		waterSaturationMap, err = senorge.MapGridCentersToWaterSaturation(hashSet, date)
+	}()
+
+	var soilTempMap map[string]float64
+	go func() {
+		defer wg.Done()
+		soilTempMap, err = openmeteo.MapGridCentersToDeepSoilTemp(hashSet, date)
+	}()
+
+	wg.Wait()
+
 	if err != nil {
-		http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-		log.Error().Msg("Error getting frost data: " + err.Error())
+		http.Error(w, "Failed to get external data", http.StatusInternalServerError)
+		log.Error().Msg("Error getting external data: " + err.Error())
 		return
 	}
 
-	waterSaturationMap, err := senorge.MapGridCentersToWaterSaturation(shardedMap.GetHashSetFromShardedMap(), date)
-	if err != nil {
-		http.Error(w, "Failed to get water saturation data", http.StatusInternalServerError)
-		log.Error().Msg("Error getting water saturation data: " + err.Error())
-		return
-	}
-
-	soilTempMap, err := openmeteo.MapGridCentersToDeepSoilTemp(shardedMap.GetHashSetFromShardedMap(), date)
-	if err != nil {
-		http.Error(w, "Failed to get soil temperature data", http.StatusInternalServerError)
-		log.Error().Msg("Error getting soil temperature data: " + err.Error())
-		return
-	}
-
-	transcribedFeatures := make([]models.ForestRoad, 0)
+	transcribedFeatures := make([]models.ForestRoad, 0, len(wfsResponse.Features))
 
 	// Iterate over the featuremap and update the features with the frost data
 	for key, features := range featureMap {
