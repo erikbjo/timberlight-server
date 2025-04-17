@@ -3,14 +3,37 @@ FROM golang:1.24 AS builder
 LABEL authors="erbj@stud.ntnu.no,simonhou@stud.ntnu.no"
 LABEL stage=builder
 
-WORKDIR /server
+WORKDIR /app
 
+RUN apt-get update && apt-get install -y libproj-dev pkg-config
+
+# Download Go modules
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY data/Losmasse/superficialdeposits_shape.zip data/Losmasse/superficialdeposits_shape.zip
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o executable ./cmd/api/main.go
+RUN ls -la data/Losmasse
+
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /api ./cmd/api/main.go
+
+FROM ubuntu:25.04
+
+WORKDIR /root/
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y libproj-dev unzip && touch .env
+
+# Copy the built binary from builder stage
+COPY --from=builder /api /api
+COPY --from=builder /app/proxy.json proxy.json
+COPY --from=builder /app/data/Losmasse data/Losmasse
+
+RUN ls -la data/Losmasse
+
+RUN ./data/Losmasse/prepare_data.sh
 
 EXPOSE 8080
 
-RUN touch .env
-
-CMD ["./executable"]
+CMD [ "/api" ]

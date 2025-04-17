@@ -1,4 +1,4 @@
-package forestryroads
+package handlers
 
 import (
 	"encoding/json"
@@ -6,33 +6,25 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
-	"skogkursbachelor/server/internal/http/handlers/forestryroads/structures"
+	"skogkursbachelor/server/internal/models"
+	"skogkursbachelor/server/internal/services/openmeteo"
+	"skogkursbachelor/server/internal/services/senorge"
+	"skogkursbachelor/server/internal/services/superficialdeposits"
 	"strings"
+	"sync"
+	_ "sync"
 )
 
-// implementedMethods is a list of the implemented HTTP methods for the status endpoint.
-var implementedMethods = []string{http.MethodGet}
+// _implementedMethods is a list of the implemented HTTP methods for the status endpoint.
+var _implementedMethods = []string{http.MethodGet}
 
-// index is a spatial index for the forestry roads
-var index *structures.SpatialIndex
-
-func init() {
-	shapefiles := []string{
-		"data/Losmasse/LosmasseFlate_20240621",
-		"data/Losmasse/LosmasseFlate_20240622",
-	}
-
-	// Build spatial index
-	index = structures.ReadShapeFilesAndBuildIndex(shapefiles)
-	log.Info().Msg("Index built successfully!")
-
-	log.Info().Msg("Forestry roads handler initialized")
-}
-
-// Handler handles requests to the forestry road endpoint.
+// ForestryRoadsHandler handles requests to the forestry road endpoint.
 // Currently only GET requests are supported.
-func Handler(w http.ResponseWriter, r *http.Request) {
+func ForestryRoadsHandler(w http.ResponseWriter, r *http.Request) {
+	// Enable CORS
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("content-type", "application/json")
+
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -43,7 +35,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(
 			w, fmt.Sprintf(
 				"REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
-				implementedMethods,
+				_implementedMethods,
 			), http.StatusNotImplemented,
 		)
 		return
@@ -55,6 +47,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// Get timeDate parameter from url
 	timeDate := r.URL.Query().Get("time")
 	if timeDate == "" {
+		log.Warn().Str("request", r.URL.String()).Msg("Missing time URL parameter")
 		http.Error(w, "Missing time URL parameter", http.StatusBadRequest)
 		return
 	}
@@ -63,6 +56,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	// Gets put into struct later
 	date := strings.Split(timeDate, "T")[0]
 	if date == "" {
+		log.Warn().Str("request", r.URL.String()).Msg("Failed to split time string")
 		http.Error(w, "Failed to split time string", http.StatusBadRequest)
 		return
 	}
@@ -88,7 +82,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode into struct
-	var wfsResponse structures.WFSResponse
+	var wfsResponse models.WFSResponse
 	err = json.NewDecoder(proxyResp.Body).Decode(&wfsResponse)
 	if err != nil {
 		http.Error(w, "Failed to decode external response", http.StatusInternalServerError)
@@ -98,46 +92,76 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 
 	// Group the features by EPSG25833 coordinates, each with a cluster at coordinates: xxx500, yyy500
 	// This is a center point of a 1000x1000 meter square, and the center of SeNorge grid cells
-	// This is done to reduce the number of requests to the frost API, as the frost API is slow and cannot
-	// handle requests with multiple coordinates in the same grid cell
 
 	shardedMap := wfsResponse.ClusterWFSResponseToShardedMap()
 	featureMap := shardedMap.GetFeaturesFromShardedMap()
+	hashSet := shardedMap.GetHashSetFromShardedMap()
 
-	isFrozenMap, err := mapGridCentersToFrozenStatus(shardedMap.GetHashSetFromShardedMap(), date)
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	var frostDepthMap map[string]float64
+	go func() {
+		defer wg.Done()
+		frostDepthMap, err = senorge.MapGridCentersToFrozenStatus(hashSet, date)
+	}()
+
+	var waterSaturationMap map[string]float64
+	go func() {
+		defer wg.Done()
+		waterSaturationMap, err = senorge.MapGridCentersToWaterSaturation(hashSet, date)
+	}()
+
+	var soilTempMap map[string]float64
+	go func() {
+		defer wg.Done()
+		soilTempMap, err = openmeteo.MapGridCentersToDeepSoilTemp(hashSet, date)
+	}()
+
+	wg.Wait()
+
 	if err != nil {
-		http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-		log.Error().Msg("Error getting frost data: " + err.Error())
+		http.Error(w, "Failed to get external data", http.StatusInternalServerError)
+		log.Error().Msg("Error getting external data: " + err.Error())
 		return
 	}
 
-	transcribedFeatures := make([]structures.WFSFeature, 0)
+	transcribedFeatures := make([]models.ForestRoad, 0, len(wfsResponse.Features))
 
 	// Iterate over the featuremap and update the features with the frost data
 	for key, features := range featureMap {
-		isFrozen, ok := isFrozenMap[key]
+		frostDepth, ok := frostDepthMap[key]
 		if !ok {
 			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-			log.Error().Msg("Error getting frost data from isFrozenMap, key: " + key)
+			log.Error().Msg("Error getting frost data from frostDepthMap, key: " + key)
 			// Not returning here, as we want to update the features with the frost data we have
 		}
 
+		waterSaturation, ok := waterSaturationMap[key]
+		if !ok {
+			http.Error(w, "Failed to get water saturation data", http.StatusInternalServerError)
+			log.Error().Msg("Error getting water saturation data from waterSaturationMap, key: " + key)
+		}
+
+		soilTemp, ok := soilTempMap[key]
+		if !ok {
+			http.Error(w, "Failed to get soil temperature data", http.StatusInternalServerError)
+			log.Error().Msg("Error getting soil temperature data from soilTempMap, key: " + key)
+		}
+
 		for i := range features {
-			features[i].IsFrozen = isFrozen
+			features[i].FrostDepth = frostDepth
+			features[i].WaterSaturation = waterSaturation
+			features[i].SoilTemperature54cm = soilTemp
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
 	}
 
-	err = updateSuperficialDepositCodesForFeatureArray(&transcribedFeatures)
+	err = superficialdeposits.UpdateSuperficialDepositCodes(&transcribedFeatures)
 	if err != nil {
 		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
 		log.Error().Msg("Error updating superficial deposit data: " + err.Error())
 		return
-	}
-
-	// Classify the features
-	for i := range transcribedFeatures {
-		classifyFeature(&transcribedFeatures[i])
 	}
 
 	// Replace the features with the transcribed features
@@ -149,13 +173,5 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		log.Error().Msg("Error encoding final response: " + err.Error())
 		return
-	}
-}
-
-func classifyFeature(feature *structures.WFSFeature) {
-	if feature.IsFrozen {
-		feature.Properties.Farge = []int{0, 0, 255}
-	} else {
-		feature.Properties.Farge = []int{255, 0, 0}
 	}
 }

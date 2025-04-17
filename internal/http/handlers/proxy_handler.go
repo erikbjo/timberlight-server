@@ -1,4 +1,4 @@
-package proxy
+package handlers
 
 import (
 	"github.com/rs/zerolog/log"
@@ -36,8 +36,7 @@ func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make the request
-	client := &http.Client{}
-	resp, err := client.Do(proxyReq)
+	resp, err := http.DefaultClient.Do(proxyReq)
 	if err != nil {
 		log.Error().Msg("Error making request: " + err.Error())
 		http.Error(w, "Failed to fetch data from WMS server", http.StatusBadGateway)
@@ -48,7 +47,7 @@ func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// Copy response headers
 	for key, values := range resp.Header {
 		for _, value := range values {
-			w.Header().Add(key, value)
+			w.Header().Set(key, value)
 		}
 	}
 

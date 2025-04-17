@@ -4,15 +4,12 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
-	"skogkursbachelor/server/internal/http/handlers/forestryroads"
-	"skogkursbachelor/server/internal/http/handlers/proxy"
+	"skogkursbachelor/server/internal/http/handlers"
 	"skogkursbachelor/server/internal/utils"
 )
 
-// Start
-/*
-Start the server on the port specified in the environment variable PORT. If PORT is not set, the default port 8080 is used.
-*/
+// Start starts the server on the port specified in the environment variable PORT.
+// If PORT is not set, the default port 8080 is used.
 func Start() {
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
@@ -30,12 +27,16 @@ func Start() {
 	// Proxies
 	for path, remoteAddr := range proxies {
 		log.Info().Msg(path + "->" + remoteAddr)
-		p := &proxy.Proxy{RemoteAddr: remoteAddr}
+		p := &handlers.Proxy{RemoteAddr: remoteAddr}
 		mux.HandleFunc(constants.ProxyPath+path, p.ProxyHandler)
 	}
 
+	// Base layer
+	mux.HandleFunc(constants.BaseLayerPath+"/{type}/{abc}/{z}/{x}/{y}", handlers.BaseLayerHandler)
+	mux.HandleFunc(constants.BaseLayerPath+"/{type}/{abc}/{z}/{x}", handlers.BaseLayerHandler)
+
 	// Forestry roads
-	mux.HandleFunc(constants.ForestryRoadsPath, forestryroads.Handler)
+	mux.HandleFunc(constants.ForestryRoadsPath, handlers.ForestryRoadsHandler)
 
 	// Start server
 	log.Info().Msg("Starting server on port " + port + " ...")
