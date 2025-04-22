@@ -43,7 +43,7 @@ func UpdateSuperficialDepositCodes(roads *[]models.ForestRoad) error {
 				return
 			}
 
-			road.SuperficialDepositCodes = codes
+			road.Properties.Løsmassekoder = codes
 		}(&(*roads)[i])
 	}
 

@@ -26,20 +26,20 @@ type WFSResponse struct {
 
 // ForestRoad represents a forest road feature with its properties and geometry.
 type ForestRoad struct {
-	Type                    string  `json:"type"`
-	FrostDepth              float64 `json:"frostDepth"`
-	WaterSaturation         float64 `json:"waterSaturation"`
-	SuperficialDepositCodes []int   `json:"superficialDepositCodes"`
-	SoilTemperature54cm     float64 `json:"soilTemperature54cm"`
-	Properties              struct {
-		Kommunenummer      string `json:"kommunenummer"`
-		Vegkategori        string `json:"vegkategori"`
-		Vegfase            string `json:"vegfase"`
-		Vegnummer          string `json:"vegnummer"`
-		Strekningnummer    string `json:"strekningnummer"`
-		Delstrekningnummer string `json:"delstrekningnummer"`
-		Frameter           string `json:"frameter"`
-		Tilmeter           string `json:"tilmeter"`
+	Type       string `json:"type"`
+	Properties struct {
+		Kommunenummer      string  `json:"kommunenummer"`
+		Vegkategori        string  `json:"vegkategori"`
+		Vegfase            string  `json:"vegfase"`
+		Vegnummer          string  `json:"vegnummer"`
+		Strekningnummer    string  `json:"strekningnummer"`
+		Delstrekningnummer string  `json:"delstrekningnummer"`
+		Frameter           string  `json:"frameter"`
+		Tilmeter           string  `json:"tilmeter"`
+		Teledybde          float64 `json:"teledybde"`
+		Vannmetning        float64 `json:"vannmetning"`
+		Løsmassekoder      []int   `json:"løsmassekoder"`
+		Jordtemperatur54cm float64 `json:"jordtemperatur54cm"`
 	} `json:"properties"`
 	Geometry struct {
 		Type        string      `json:"type"`

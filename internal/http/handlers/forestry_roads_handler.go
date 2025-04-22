@@ -101,29 +101,39 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	wg.Add(3)
 
 	var frostDepthMap map[string]float64
+	var err1 error
 	go func() {
 		defer wg.Done()
-		frostDepthMap, err = senorge.MapGridCentersToFrozenStatus(hashSet, date)
+		frostDepthMap, err1 = senorge.MapGridCentersToFrozenStatus(hashSet, date)
 	}()
 
 	var waterSaturationMap map[string]float64
+	var err2 error
 	go func() {
 		defer wg.Done()
-		waterSaturationMap, err = senorge.MapGridCentersToWaterSaturation(hashSet, date)
+		waterSaturationMap, err2 = senorge.MapGridCentersToWaterSaturation(hashSet, date)
 	}()
 
 	var soilTempMap map[string]float64
+	var err3 error
 	go func() {
 		defer wg.Done()
-		soilTempMap, err = openmeteo.MapGridCentersToDeepSoilTemp(hashSet, date)
+		soilTempMap, err3 = openmeteo.MapGridCentersToDeepSoilTemp(hashSet, date)
 	}()
 
 	wg.Wait()
 
-	if err != nil {
-		http.Error(w, "Failed to get external data", http.StatusInternalServerError)
-		log.Error().Msg("Error getting external data: " + err.Error())
-		return
+	if err1 != nil {
+		log.Error().Msg("Error getting frozen status: " + err1.Error())
+		http.Error(w, "Error getting external data", http.StatusInternalServerError)
+	}
+	if err2 != nil {
+		log.Error().Msg("Error getting waterSaturation: " + err2.Error())
+		http.Error(w, "Error getting external data", http.StatusInternalServerError)
+	}
+	if err3 != nil {
+		log.Error().Msg("Error getting soilTemp: " + err3.Error())
+		http.Error(w, "Error getting external data", http.StatusInternalServerError)
 	}
 
 	transcribedFeatures := make([]models.ForestRoad, 0, len(wfsResponse.Features))
@@ -150,9 +160,9 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for i := range features {
-			features[i].FrostDepth = frostDepth
-			features[i].WaterSaturation = waterSaturation
-			features[i].SoilTemperature54cm = soilTemp
+			features[i].Properties.Teledybde = frostDepth
+			features[i].Properties.Vannmetning = waterSaturation
+			features[i].Properties.Jordtemperatur54cm = soilTemp
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
 	}
