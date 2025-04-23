@@ -90,88 +90,76 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If there are 0 roads, just return the wfsResponse
+	if wfsResponse.NumberMatched == 0 {
+		log.Debug().Str("request", r.URL.String()).Msg("No features found in WFS response")
+		err = json.NewEncoder(w).Encode(wfsResponse)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			log.Error().Msg("Error encoding final response: " + err.Error())
+			return
+		}
+		return
+	}
+
 	// Group the features by EPSG25833 coordinates, each with a cluster at coordinates: xxx500, yyy500
 	// This is a center point of a 1000x1000 meter square, and the center of SeNorge grid cells
 
 	shardedMap := wfsResponse.ClusterWFSResponseToShardedMap()
 	featureMap := shardedMap.GetFeaturesFromShardedMap()
-	hashSet := shardedMap.GetHashSetFromShardedMap()
+
+	// Superficial depositz
+	err = superficialdeposits.UpdateSuperficialDepositCodes(&featureMap)
+	if err != nil {
+		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
+		log.Error().Msg("Error updating superficial deposit data: " + err.Error())
+		return
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(3)
 
-	var frostDepthMap map[string]float64
 	var err1 error
 	go func() {
 		defer wg.Done()
-		frostDepthMap, err1 = senorge.MapGridCentersToFrozenStatus(hashSet, date)
+		err1 = senorge.UpdateFrostDepth(&featureMap, date)
 	}()
 
-	var waterSaturationMap map[string]float64
 	var err2 error
 	go func() {
 		defer wg.Done()
-		waterSaturationMap, err2 = senorge.MapGridCentersToWaterSaturation(hashSet, date)
+		err2 = senorge.UpdateWaterSaturation(&featureMap, date)
 	}()
 
-	var soilTempMap map[string]float64
 	var err3 error
 	go func() {
 		defer wg.Done()
-		soilTempMap, err3 = openmeteo.MapGridCentersToDeepSoilTemp(hashSet, date)
+		err3 = openmeteo.UpdateDeepSoilTemp(&featureMap, date)
 	}()
 
 	wg.Wait()
 
 	if err1 != nil {
 		log.Error().Msg("Error getting frozen status: " + err1.Error())
-		http.Error(w, "Error getting external data", http.StatusInternalServerError)
 	}
 	if err2 != nil {
 		log.Error().Msg("Error getting waterSaturation: " + err2.Error())
-		http.Error(w, "Error getting external data", http.StatusInternalServerError)
 	}
 	if err3 != nil {
 		log.Error().Msg("Error getting soilTemp: " + err3.Error())
+	}
+	if err1 != nil || err2 != nil || err3 != nil {
 		http.Error(w, "Error getting external data", http.StatusInternalServerError)
+		return
 	}
 
 	transcribedFeatures := make([]models.ForestRoad, 0, len(wfsResponse.Features))
 
 	// Iterate over the featuremap and update the features with the frost data
-	for key, features := range featureMap {
-		frostDepth, ok := frostDepthMap[key]
-		if !ok {
-			http.Error(w, "Failed to get frost data", http.StatusInternalServerError)
-			log.Error().Msg("Error getting frost data from frostDepthMap, key: " + key)
-			// Not returning here, as we want to update the features with the frost data we have
-		}
-
-		waterSaturation, ok := waterSaturationMap[key]
-		if !ok {
-			http.Error(w, "Failed to get water saturation data", http.StatusInternalServerError)
-			log.Error().Msg("Error getting water saturation data from waterSaturationMap, key: " + key)
-		}
-
-		soilTemp, ok := soilTempMap[key]
-		if !ok {
-			http.Error(w, "Failed to get soil temperature data", http.StatusInternalServerError)
-			log.Error().Msg("Error getting soil temperature data from soilTempMap, key: " + key)
-		}
-
+	for _, features := range featureMap {
 		for i := range features {
-			features[i].Properties.Teledybde = frostDepth
-			features[i].Properties.Vannmetning = waterSaturation
-			features[i].Properties.Jordtemperatur54cm = soilTemp
 			transcribedFeatures = append(transcribedFeatures, features[i])
 		}
-	}
-
-	err = superficialdeposits.UpdateSuperficialDepositCodes(&transcribedFeatures)
-	if err != nil {
-		http.Error(w, "Failed to update superficial deposit data", http.StatusInternalServerError)
-		log.Error().Msg("Error updating superficial deposit data: " + err.Error())
-		return
 	}
 
 	// Replace the features with the transcribed features

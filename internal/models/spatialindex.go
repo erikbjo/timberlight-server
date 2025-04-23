@@ -106,8 +106,7 @@ func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{
 	results := index.Query(x, y, x, y)
 
 	if len(results) == 0 {
-		log.Warn().Msg("No results returned for point: " + fmt.Sprintf("%f, %f", x, y))
-		return nil, fmt.Errorf("no superficial deposit results for point")
+		log.Debug().Msgf("No results found for x: %f, y %f", x, y)
 	}
 
 	for _, result := range results {
@@ -118,5 +117,5 @@ func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{
 		}
 	}
 
-	return nil, fmt.Errorf("no results for point %f, %f", x, y)
+	return nil, nil
 }

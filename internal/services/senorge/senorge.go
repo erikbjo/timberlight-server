@@ -4,16 +4,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/models"
 	"strings"
 )
 
-func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[string]float64, error) {
-	coordinatesString, err := createCoordinateString(featureMap)
+func UpdateFrostDepth(featureMap *map[string][]models.ForestRoad, date string) error {
+	coordinatesString, err := createCoordinateString(*featureMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create coordinate string: %v", err)
+		return fmt.Errorf("failed to create coordinate string: %v", err)
+	}
+
+	if coordinatesString == "" {
+		for _, value := range *featureMap {
+			for _, feature := range value {
+				feature.Properties.Teledybde = 0
+			}
+		}
 	}
 
 	body := models.NVEFMultiPointTimeSeriesRequest{
@@ -26,7 +35,7 @@ func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 
 	bodyJSON, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %v", err)
+		return fmt.Errorf("failed to marshal request body: %v", err)
 	}
 
 	// Use NVE api to get frost data
@@ -36,7 +45,7 @@ func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 		bytes.NewBuffer(bodyJSON),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		return fmt.Errorf("failed to create request: %v", err)
 	}
 
 	r.Header.Set("Content-Type", "application/json")
@@ -44,7 +53,11 @@ func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	// Do the request
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to do request: %v", err)
+		return fmt.Errorf("failed to do request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch frozen status: %s", resp.Status)
 	}
 
 	defer resp.Body.Close()
@@ -53,28 +66,40 @@ func MapGridCentersToFrozenStatus(featureMap map[string]bool, date string) (map[
 	response := models.NVEMultiPointTimeSeriesResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+		return fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
 	if len(response.CellTimeSeries) == 0 {
-		return nil, fmt.Errorf("no data in response")
+		return fmt.Errorf("no data in response")
 	}
 
-	// Create map of frost depth values
-	frostDepthMap := make(map[string]float64, len(response.CellTimeSeries))
 	for i := range response.CellTimeSeries {
 		key := fmt.Sprintf("%d,%d", response.CellTimeSeries[i].X, response.CellTimeSeries[i].Y)
-		frostDepthMap[key] = response.CellTimeSeries[i].Data[0]
+		slice, ok := (*featureMap)[key]
+		if !ok {
+			log.Warn().Msgf("featureMap does not contain key: %s", key)
+		}
+
+		for _, val := range slice {
+			val.Properties.Teledybde = response.CellTimeSeries[i].Data[0]
+		}
 	}
 
-	return frostDepthMap, nil
+	return nil
 }
 
-func MapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (map[string]float64, error) {
-
-	coordinatesString, err := createCoordinateString(featureMap)
+func UpdateWaterSaturation(featureMap *map[string][]models.ForestRoad, date string) error {
+	coordinatesString, err := createCoordinateString(*featureMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create coordinate string: %v", err)
+		return fmt.Errorf("failed to create coordinate string: %v", err)
+	}
+
+	if coordinatesString == "" {
+		for _, value := range *featureMap {
+			for _, feature := range value {
+				feature.Properties.Vannmetning = 0
+			}
+		}
 	}
 
 	body := models.NVEFMultiPointTimeSeriesRequest{
@@ -87,7 +112,7 @@ func MapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (m
 
 	bodyJSON, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %v", err)
+		return fmt.Errorf("failed to marshal request body: %v", err)
 	}
 
 	// Use NVE api to get frost data
@@ -97,7 +122,7 @@ func MapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (m
 		bytes.NewBuffer(bodyJSON),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		return fmt.Errorf("failed to create request: %v", err)
 	}
 
 	r.Header.Set("Content-Type", "application/json")
@@ -105,7 +130,11 @@ func MapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (m
 	// Do the request
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to do request: %v", err)
+		return fmt.Errorf("failed to do request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch frozen status: %s", resp.Status)
 	}
 
 	defer resp.Body.Close()
@@ -114,24 +143,29 @@ func MapGridCentersToWaterSaturation(featureMap map[string]bool, date string) (m
 	response := models.NVEMultiPointTimeSeriesResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
+		return fmt.Errorf("failed to decode response: %v", err)
 	}
 
 	if len(response.CellTimeSeries) == 0 {
-		return nil, fmt.Errorf("no data in response")
+		return fmt.Errorf("no data in response")
 	}
 
-	// Create map of frost depth values
-	waterSaturationMap := make(map[string]float64, len(response.CellTimeSeries))
 	for i := range response.CellTimeSeries {
 		key := fmt.Sprintf("%d,%d", response.CellTimeSeries[i].X, response.CellTimeSeries[i].Y)
-		waterSaturationMap[key] = response.CellTimeSeries[i].Data[0]
+		slice, ok := (*featureMap)[key]
+		if !ok {
+			log.Warn().Msgf("featureMap does not contain key: %s", key)
+		}
+
+		for _, val := range slice {
+			val.Properties.Vannmetning = response.CellTimeSeries[i].Data[0]
+		}
 	}
 
-	return waterSaturationMap, nil
+	return nil
 }
 
-func createCoordinateString(featureMap map[string]bool) (string, error) {
+func createCoordinateString(featureMap map[string][]models.ForestRoad) (string, error) {
 	if len(featureMap) == 0 {
 		return "", fmt.Errorf("feature map is empty")
 	}
@@ -139,9 +173,14 @@ func createCoordinateString(featureMap map[string]bool) (string, error) {
 	// Coordinates is in format "X1 Y1, X2 Y2, ..."
 	stringBuilder := strings.Builder{}
 
-	for key := range featureMap {
+	for key, array := range featureMap {
+		// If feature is on superficial code 1 (Løsmasser/berggrunn under vann,uspesifisert), skip
+		if array[0].Properties.Erklyngesenterundervann {
+			continue
+		}
+
 		stringBuilder.WriteString(strings.Replace(key, ",", " ", -1))
-		stringBuilder.WriteString(",")
+		stringBuilder.WriteString(", ")
 	}
 
 	coordinatesString := stringBuilder.String()

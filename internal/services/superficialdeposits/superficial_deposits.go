@@ -7,11 +7,14 @@ import (
 	"skogkursbachelor/server/internal/models"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 )
 
 // index is a spatial index for the forestry roads
 var _index = buildIndex()
+
+var _fjordIndex = buildFjordIndex()
 
 func buildIndex() *models.SpatialIndex {
 	shapefiles := []string{
@@ -22,29 +25,55 @@ func buildIndex() *models.SpatialIndex {
 	return models.ReadShapeFilesAndBuildIndex(shapefiles)
 }
 
-func UpdateSuperficialDepositCodes(roads *[]models.ForestRoad) error {
+func buildFjordIndex() *models.SpatialIndex {
+	shapefiles := []string{
+		"data/Fjord/fjordkatalogen_omrade",
+	}
+
+	return models.ReadShapeFilesAndBuildIndex(shapefiles)
+}
+
+func UpdateSuperficialDepositCodes(featureMap *map[string][]models.ForestRoad) error {
 	semaphore := make(chan struct{}, runtime.NumCPU())
 	var wg sync.WaitGroup
 
-	for i := 0; i < len(*roads); i++ {
-		wg.Add(1)
+	for key, values := range *featureMap {
+		// Get code for key, used for validation for senorge
+		sliced := strings.Split(key, ",")
+		x, err := strconv.ParseFloat(sliced[0], 64)
+		if err != nil {
+			log.Error().Msg("Failed to parse float: " + sliced[0])
+			continue
+		}
 
-		// Reserve a slot
-		semaphore <- struct{}{}
+		y, err := strconv.ParseFloat(sliced[1], 64)
+		if err != nil {
+			log.Error().Msg("Failed to parse float: " + sliced[1])
+			continue
+		}
 
-		go func(road *models.ForestRoad) {
-			defer wg.Done()
-			// Release the slot
-			defer func() { <-semaphore }()
+		isInFjord, err := getIsPointInFjord([]float64{x, y})
 
-			codes, err := getSuperficialDepositCodesForRoad(*road)
-			if err != nil {
-				log.Warn().Msg("Failed to get superficial deposit codes: " + err.Error())
-				return
-			}
+		for i := range values {
+			wg.Add(1)
 
-			road.Properties.Løsmassekoder = codes
-		}(&(*roads)[i])
+			// Reserve a slot
+			semaphore <- struct{}{}
+
+			go func(road *models.ForestRoad) {
+				defer wg.Done()
+				defer func() { <-semaphore }()
+
+				codes, err := getSuperficialDepositCodesForRoad(*road)
+				if err != nil {
+					log.Warn().Msg("Failed to get superficial deposit codes: " + err.Error())
+					return
+				}
+
+				road.Properties.Løsmassekoder = codes
+				road.Properties.Erklyngesenterundervann = isInFjord
+			}(&values[i])
+		}
 	}
 
 	wg.Wait()
@@ -117,4 +146,18 @@ func getSuperficialDepositCodeForPoint(coordinate []float64) (int, error) {
 	}
 
 	return code.(int), nil
+}
+
+func getIsPointInFjord(coordinate []float64) (bool, error) {
+	results, err := models.QuerySpatialIndex(_fjordIndex, coordinate[0], coordinate[1])
+	if err != nil {
+		return false, fmt.Errorf("failed to query spatial index: " + err.Error())
+	}
+
+	if results == nil {
+		// If result is nil -> the point is not in a fjord
+		return false, nil
+	} else {
+		return true, nil
+	}
 }

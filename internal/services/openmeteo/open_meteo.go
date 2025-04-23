@@ -12,9 +12,9 @@ import (
 	"strings"
 )
 
-func MapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (map[string]float64, error) {
+func UpdateDeepSoilTemp(featureMap *map[string][]models.ForestRoad, date string) error {
 	// Cluster the coordinates into 25 degree cells
-	clusteredMap := clusterCoordinates(gridCentersMap)
+	clusteredMap := clusterCoordinates(*featureMap)
 	soilTempMapLatLong := make(map[string]float64)
 
 	lats := make([]float64, len(clusteredMap))
@@ -45,8 +45,7 @@ func MapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (
 	url := *new(string)
 	// If date is earlier than today, use the Open Meteo API
 	if isBefore, err := utils.IsEarlierThanToday(date); err != nil {
-		log.Error().Msg("Failed to check if date is earlier than today: " + err.Error())
-		return nil, err
+		return fmt.Errorf("failed to check if date is earlier than today: %w", err)
 	} else if isBefore {
 		url = constants.OpenMeteoHistoricalDeepSoilTempURL
 	} else {
@@ -67,8 +66,7 @@ func MapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (
 		nil,
 	)
 	if err != nil {
-		log.Error().Msg("Failed to create request: " + err.Error())
-		return nil, err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	r.Header.Set("Content-Type", "application/json")
@@ -76,8 +74,7 @@ func MapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (
 	// Do the request
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		log.Error().Msg("Failed to do request: " + err.Error())
-		return nil, err
+		return fmt.Errorf("failed to do request: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -86,27 +83,27 @@ func MapGridCentersToDeepSoilTemp(gridCentersMap map[string]bool, date string) (
 	var response []models.OpenMeteoDeepSoilTempResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		log.Error().Msg("Failed to decode response: " + err.Error())
-		return nil, err
+		return fmt.Errorf("failed to decode response from Open Meteo: %w", err)
 	}
 
 	for _, meteoResp := range response {
 		soilTempMapLatLong[strconv.FormatFloat(meteoResp.Latitude, 'f', -1, 64)+","+strconv.FormatFloat(meteoResp.Longitude, 'f', -1, 64)] = meteoResp.Hourly.SoilTemperature54Cm[len(meteoResp.Hourly.SoilTemperature54Cm)/2]
 	}
 
-	soilTempMap25833 := make(map[string]float64)
-
 	for key, coordinates := range clusteredMap {
-		soilMoisture := soilTempMapLatLong[key]
+		soilTemp := soilTempMapLatLong[key]
 		for _, coordinate := range coordinates {
-			soilTempMap25833[coordinate] = soilMoisture
+			features := (*featureMap)[coordinate]
+			for i := range features {
+				features[i].Properties.Jordtemperatur54cm = soilTemp
+			}
 		}
 	}
 
-	return soilTempMap25833, nil
+	return nil
 }
 
-func clusterCoordinates(featureMap map[string]bool) map[string][]string {
+func clusterCoordinates(featureMap map[string][]models.ForestRoad) map[string][]string {
 	// Create a map with 25 degree cells as keys and the coordinates in the cell as values
 	clusteredMap := make(map[string][]string)
 
