@@ -12,6 +12,6 @@ fi
 
 echo "Using path: $1"
 
-unzip "$1"/superficialdeposits_shape.zip -d "$1"
+unzip "$1"/fjordkatalogen_omrade.zip -d "$1"
 
-rm "$1"/superficialdeposits_shape.zip
+rm "$1"/fjordkatalogen_omrade.zip
