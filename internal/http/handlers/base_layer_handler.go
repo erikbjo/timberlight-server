@@ -48,6 +48,7 @@ func handleBaseLayerGet(w http.ResponseWriter, r *http.Request) {
 	default:
 		log.Error().Msg("Invalid topo type in base layer request")
 		http.Error(w, "Invalid topo type", http.StatusBadRequest)
+		return
 	}
 
 	for _, v := range []string{z, x, y} {

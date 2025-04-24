@@ -105,10 +105,6 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{}, error) {
 	results := index.Query(x, y, x, y)
 
-	if len(results) == 0 {
-		log.Debug().Msgf("No results found for x: %f, y %f", x, y)
-	}
-
 	for _, result := range results {
 		if attributes, ok := result.(map[string]interface{}); ok {
 			return attributes, nil

@@ -70,6 +70,10 @@ func UpdateSuperficialDepositCodes(featureMap *map[string][]models.ForestRoad) e
 					return
 				}
 
+				if len(codes) == 0 {
+					log.Warn().Msg("No superficial deposit codes found for road: " + road.Properties.Vegnummer)
+				}
+
 				road.Properties.Løsmassekoder = codes
 				road.Properties.Erklyngesenterundervann = isInFjord
 			}(&values[i])
@@ -136,7 +140,7 @@ func getSuperficialDepositCodeForPoint(coordinate []float64) (int, error) {
 	}
 
 	if results == nil {
-		return 0, fmt.Errorf("no results returned for point: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
+		return 0, nil
 	}
 
 	// Get the superficial deposit code, jordart:xx
