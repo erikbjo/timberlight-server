@@ -80,8 +80,8 @@ func UpdateFrostDepth(featureMap *map[string][]models.ForestRoad, date string) e
 			log.Warn().Msgf("featureMap does not contain key: %s", key)
 		}
 
-		for _, val := range slice {
-			val.Properties.Teledybde = response.CellTimeSeries[i].Data[0]
+		for j := range slice {
+			slice[j].Properties.Teledybde = response.CellTimeSeries[i].Data[0]
 		}
 	}
 
@@ -157,8 +157,8 @@ func UpdateWaterSaturation(featureMap *map[string][]models.ForestRoad, date stri
 			log.Warn().Msgf("featureMap does not contain key: %s", key)
 		}
 
-		for _, val := range slice {
-			val.Properties.Vannmetning = response.CellTimeSeries[i].Data[0]
+		for j := range slice {
+			slice[j].Properties.Vannmetning = response.CellTimeSeries[i].Data[0]
 		}
 	}
 
