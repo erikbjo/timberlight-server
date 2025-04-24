@@ -81,9 +81,18 @@ func UpdateDeepSoilTemp(featureMap *map[string][]models.ForestRoad, date string)
 
 	// Decode response
 	var response []models.OpenMeteoDeepSoilTempResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		return fmt.Errorf("failed to decode response from Open Meteo: %w", err)
+	if len(lats) == 1 {
+		var singleResponse models.OpenMeteoDeepSoilTempResponse
+		err = json.NewDecoder(resp.Body).Decode(&singleResponse)
+		if err != nil {
+			return fmt.Errorf("failed to decode response from Open Meteo: %w", err)
+		}
+		response = append(response, singleResponse)
+	} else {
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			return fmt.Errorf("failed to decode response from Open Meteo: %w", err)
+		}
 	}
 
 	for _, meteoResp := range response {
