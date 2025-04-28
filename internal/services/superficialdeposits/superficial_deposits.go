@@ -19,7 +19,7 @@ var _fjordIndex = buildFjordIndex()
 func buildIndex() *models.SpatialIndex {
 	shapefiles := []string{
 		"data/Losmasse/LosmasseFlate_20240621",
-		"data/Losmasse/LosmasseFlate_20240622",
+		//"data/Losmasse/LosmasseFlate_20240622",
 	}
 
 	return models.ReadShapeFilesAndBuildIndex(shapefiles)
@@ -85,8 +85,6 @@ func UpdateSuperficialDepositCodes(featureMap *map[string][]models.ForestRoad) e
 }
 
 func getSuperficialDepositCodesForRoad(road models.ForestRoad) ([]int, error) {
-	var codes []int
-
 	// Get the road length
 	roadStart, err := strconv.Atoi(road.Properties.Frameter)
 	if err != nil {
@@ -102,7 +100,7 @@ func getSuperficialDepositCodesForRoad(road models.ForestRoad) ([]int, error) {
 		return nil, fmt.Errorf("road length is negative " + road.Properties.Vegnummer)
 	}
 
-	queryEveryMeter := 50
+	queryEveryMeter := 10
 	queryAmount := roadLength / queryEveryMeter
 	if queryAmount == 0 {
 		queryAmount = 1
@@ -117,39 +115,56 @@ func getSuperficialDepositCodesForRoad(road models.ForestRoad) ([]int, error) {
 		queryAmount = len(road.Geometry.Coordinates)
 	}
 
-	// Query every 50 meters
-	// TODO: goroutine?
+	// Query every x meters
+	var codes []int
 	for i := 0; i < queryAmount; i += queryEveryIndex {
 		// Get the superficial deposit code for the current point
-		code, err := getSuperficialDepositCodeForPoint(road.Geometry.Coordinates[i])
+		coordinates := road.Geometry.Coordinates[i]
+		codesForPoint, err := getSuperficialDepositCodesForPoint(coordinates)
 		if err != nil {
 			return nil, err
 		}
-		if !slices.Contains(codes, code) {
-			codes = append(codes, code)
+		for _, code := range codesForPoint {
+			// If code is 1 (Løsmasser/berggrunn under vann,uspesifisert), skip
+			if code == 1 {
+				continue
+			}
+
+			if !slices.Contains(codes, code) {
+				codes = append(codes, code)
+			}
 		}
 	}
 
 	return codes, nil
 }
 
-func getSuperficialDepositCodeForPoint(coordinate []float64) (int, error) {
+func getSuperficialDepositCodesForPoint(coordinate []float64) ([]int, error) {
 	results, err := models.QuerySpatialIndex(_index, coordinate[0], coordinate[1])
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	if results == nil {
-		return 0, nil
-	}
+	//if results == nil {
+	//	return nil, nil
+	//}
+
+	var codes []int
 
 	// Get the superficial deposit code, jordart:xx
-	code, ok := results["jordart"]
-	if !ok {
-		return 0, fmt.Errorf("no jordart in results for point: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
+	for _, result := range results {
+		code, ok := result["jordart"]
+		if !ok {
+			return nil, fmt.Errorf("no jordart in results for point: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
+		}
+		codeInt, ok := code.(int)
+		if !ok {
+			return nil, fmt.Errorf("jordart is not an int: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
+		}
+		codes = append(codes, codeInt)
 	}
 
-	return code.(int), nil
+	return codes, nil
 }
 
 func getIsPointInFjord(coordinate []float64) (bool, error) {

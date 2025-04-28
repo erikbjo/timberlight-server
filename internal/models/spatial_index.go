@@ -91,7 +91,7 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 						index.Insert(bbox.Min(0), bbox.Min(1), bbox.Max(0), bbox.Max(1), key, attributes)
 					}
 				default:
-					log.Warn().Msgf("Unsupported geometry type in %s: %T", f, geometry)
+					log.Debug().Msgf("Unsupported geometry type in %s: %T", f, geometry)
 				}
 			}
 		}(file)
@@ -102,16 +102,18 @@ func ReadShapeFilesAndBuildIndex(shapefiles []string) *SpatialIndex {
 }
 
 // QuerySpatialIndex checks if a point is inside any geometry in the spatial index
-func QuerySpatialIndex(index *SpatialIndex, x, y float64) (map[string]interface{}, error) {
+func QuerySpatialIndex(index *SpatialIndex, x, y float64) ([]map[string]interface{}, error) {
 	results := index.Query(x, y, x, y)
+
+	var attributesList []map[string]interface{}
 
 	for _, result := range results {
 		if attributes, ok := result.(map[string]interface{}); ok {
-			return attributes, nil
+			attributesList = append(attributesList, attributes)
 		} else {
 			return nil, fmt.Errorf("unexpected result type %T", result)
 		}
 	}
 
-	return nil, nil
+	return attributesList, nil
 }
