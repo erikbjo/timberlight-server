@@ -3,10 +3,8 @@
   "senorgewms": "https://nve.geodataonline.no/arcgis/services/seNorgeGrid_png/ImageServer/WMSServer",
   "probablesoilmoisture": "https://wms.nibio.no/cgi-bin/markfuktighetskart",
   "superficialdeposits": "https://geo.ngu.no/mapserver/LosmasserWMS2",
-  "copernicus": "https://european-flood.emergency.copernicus.eu/api/wms",
   "legend/soilsaturation": "https://geodata-hosting-nve-prod-imagefiles.s3.eu-north-1.amazonaws.com/static/seNorgeGridLegend/gwb_sssrel.png",
   "legend/frostdepth": "https://geodata-hosting-nve-prod-imagefiles.s3.eu-north-1.amazonaws.com/static/seNorgeGridLegend/gwb_frd.png",
   "legend/probablesoilmoisture": "https://wms.nibio.no/cgi-bin/markfuktighetskart",
-  "legend/superficialdeposits": "https://geo.ngu.no/mapserver/LosmasserWMS2",
-  "legend/copernicus": "https://european-flood.emergency.copernicus.eu/api/wms"
+  "legend/superficialdeposits": "https://geo.ngu.no/mapserver/LosmasserWMS2"
 }
