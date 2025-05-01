@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/models"
-	"skogkursbachelor/server/internal/services/openmeteo"
 	"skogkursbachelor/server/internal/services/senorge"
 	"skogkursbachelor/server/internal/services/superficialdeposits"
 	"strings"
@@ -117,7 +116,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(2)
 
 	var err1 error
 	go func() {
@@ -131,12 +130,6 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 		err2 = senorge.UpdateWaterSaturation(&featureMap, date)
 	}()
 
-	var err3 error
-	go func() {
-		defer wg.Done()
-		err3 = openmeteo.UpdateDeepSoilTemp(&featureMap, date)
-	}()
-
 	wg.Wait()
 
 	if err1 != nil {
@@ -145,10 +138,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 	if err2 != nil {
 		log.Error().Msg("Error getting waterSaturation: " + err2.Error())
 	}
-	if err3 != nil {
-		log.Error().Msg("Error getting soilTemp: " + err3.Error())
-	}
-	if err1 != nil || err2 != nil || err3 != nil {
+	if err1 != nil || err2 != nil {
 		http.Error(w, "Error getting external data", http.StatusInternalServerError)
 		return
 	}

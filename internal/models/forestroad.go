@@ -39,7 +39,6 @@ type ForestRoad struct {
 		Teledybde               float64 `json:"teledybde"`
 		Vannmetning             float64 `json:"vannmetning"`
 		Løsmassekoder           []int   `json:"løsmassekoder"`
-		Jordtemperatur54cm      float64 `json:"jordtemperatur54cm"`
 		Erklyngesenterundervann bool    `json:"erklyngesenterundervann"`
 	} `json:"properties"`
 	Geometry struct {
