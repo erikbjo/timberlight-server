@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/models"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 func UpdateFrostDepth(featureMap *map[string][]models.ForestRoad, date string) error {

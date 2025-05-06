@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/rs/zerolog/log"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
 // _defaultPort is the default port for the server

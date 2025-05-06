@@ -2,11 +2,12 @@
 package main
 
 import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"os"
 	"skogkursbachelor/server/internal/config"
 	"skogkursbachelor/server/internal/http/server"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Start the server

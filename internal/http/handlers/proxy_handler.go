@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Proxy struct {

@@ -2,13 +2,14 @@ package superficialdeposits
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"runtime"
 	"skogkursbachelor/server/internal/models"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/rs/zerolog/log"
 )
 
 // index is a spatial index for the forestry roads

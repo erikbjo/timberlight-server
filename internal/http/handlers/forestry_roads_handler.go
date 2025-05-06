@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/models"
@@ -11,7 +10,8 @@ import (
 	"skogkursbachelor/server/internal/services/superficialdeposits"
 	"strings"
 	"sync"
-	_ "sync"
+
+	"github.com/rs/zerolog/log"
 )
 
 // _implementedMethods is a list of the implemented HTTP methods for the status endpoint.

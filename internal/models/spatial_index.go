@@ -2,11 +2,12 @@ package models
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/rs/zerolog/log"
 	"github.com/tidwall/rtree"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-shapefile"
-	"sync"
 )
 
 // SpatialIndex represents an R-tree for efficient spatial queries
