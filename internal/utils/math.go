@@ -14,7 +14,7 @@ func RoundToNearest50Deg(coordinate float64) float64 {
 
 // RoundToNearest500 rounds a number to the nearest 500.
 // This is used to cluster the features into 1000x1000 meter squares, ending in 500.
-func RoundToNearest500(n int) int {
-	base := (n / 1000) * 1000
+func RoundToNearest500(n float64) int {
+	base := (int(math.Round(n)) / 1000) * 1000
 	return base + 500
 }

@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"math"
 	"runtime"
 	"skogkursbachelor/server/internal/utils"
 	"sync"
@@ -65,8 +64,8 @@ func (wfsResponse WFSResponse) ClusterWFSResponseToShardedMap() *ShardedMap {
 			middleIndex := len(feature.Geometry.Coordinates) / 2
 			coordinates := feature.Geometry.Coordinates[middleIndex]
 
-			roundedX := utils.RoundToNearest500(int(math.Round(coordinates[0])))
-			roundedY := utils.RoundToNearest500(int(math.Round(coordinates[1])))
+			roundedX := utils.RoundToNearest500(coordinates[0])
+			roundedY := utils.RoundToNearest500(coordinates[1])
 			roundedCoordinates := fmt.Sprintf("%d,%d", roundedX, roundedY)
 
 			featureMap.Set(roundedCoordinates, feature)
