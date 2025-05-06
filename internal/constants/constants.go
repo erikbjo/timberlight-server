@@ -12,6 +12,7 @@ const APIPath = DefaultPath + "api/" + Version + "/"
 const ForestryRoadsPath = APIPath + "forestryroads"
 
 const ProxyPath = DefaultPath + "proxy/"
+const ForestLegendPath = ProxyPath + "legend/forestryroads"
 const BaseLayerPath = ProxyPath + "baselayer"
 
 // External Endpoints

@@ -1,11 +1,12 @@
 package server
 
 import (
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"skogkursbachelor/server/internal/constants"
 	"skogkursbachelor/server/internal/http/handlers"
 	"skogkursbachelor/server/internal/utils"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Start starts the server on the port specified in the environment variable PORT.
@@ -38,7 +39,9 @@ func Start() {
 	// Forestry roads
 	mux.HandleFunc(constants.ForestryRoadsPath, handlers.ForestryRoadsHandler)
 
-	// Start server
+	// Forestry roads legend
+	mux.HandleFunc(constants.ForestLegendPath, handlers.ForestryLegendHandler)
+
 	log.Info().Msg("Starting server on port " + port + " ...")
 	log.Fatal().Msg(http.ListenAndServe(":"+port, mux).Error())
 }
