@@ -13,6 +13,7 @@ RUN go mod download
 
 COPY data/Losmasse/superficialdeposits_shape.zip data/Losmasse/superficialdeposits_shape.zip
 COPY data/Fjord/fjordkatalogen_omrade.zip data/Fjord/fjordkatalogen_omrade.zip
+COPY assets/forestry_road_legend.png assets/forestry_road_legend.png
 COPY . .
 
 RUN ls -la data/Losmasse
@@ -31,6 +32,7 @@ COPY --from=builder /api /api
 COPY --from=builder /app/proxy.json proxy.json
 COPY --from=builder /app/data/Losmasse data/Losmasse
 COPY --from=builder /app/data/Fjord data/Fjord
+COPY --from=builder /app/assets/forestry_road_legend.png assets/forestry_road_legend.png
 
 RUN ls -la data/Losmasse
 
