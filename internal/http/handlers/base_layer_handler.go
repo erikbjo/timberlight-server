@@ -65,7 +65,7 @@ func handleBaseLayerGet(w http.ResponseWriter, r *http.Request) {
 			url += fmt.Sprintf("/%s", v)
 		}
 	}
-	url += fmt.Sprintf(".png")
+	url += ".png"
 
 	proxyReq, err := http.NewRequest(r.Method, url, nil)
 	if err != nil {

@@ -54,6 +54,9 @@ func UpdateSuperficialDepositCodes(featureMap *map[string][]models.ForestRoad) e
 		}
 
 		isInFjord, err := getIsPointInFjord([]float64{x, y})
+		if err != nil {
+			log.Error().Msg("Error while checking fjord value: " + err.Error())
+		}
 
 		for i := range values {
 			wg.Add(1)

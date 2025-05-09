@@ -180,7 +180,7 @@ func createCoordinateString(featureMap map[string][]models.ForestRoad) (string, 
 			continue
 		}
 
-		stringBuilder.WriteString(strings.Replace(key, ",", " ", -1))
+		stringBuilder.WriteString(strings.ReplaceAll(key, ",", " "))
 		stringBuilder.WriteString(", ")
 	}
 

@@ -15,17 +15,14 @@ func Start() {
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
 
+	mux := http.NewServeMux()
+
 	// Get list of proxy endpoints
 	proxies, err := utils.LoadProxiesFromFile()
 	if err != nil {
 		log.Fatal().Msg("Error loading proxies: " + err.Error())
 	}
 
-	// Using mux to handle /'s and parameters
-	mux := http.NewServeMux()
-
-	// Set up handler endpoints, with and without trailing slash
-	// Proxies
 	for path, remoteAddr := range proxies {
 		log.Info().Msg(path + "->" + remoteAddr)
 		p := &handlers.Proxy{RemoteAddr: remoteAddr}

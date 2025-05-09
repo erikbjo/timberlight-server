@@ -147,9 +147,7 @@ func handleForestryRoadGet(w http.ResponseWriter, r *http.Request) {
 
 	// Iterate over the featuremap and update the features with the frost data
 	for _, features := range featureMap {
-		for i := range features {
-			transcribedFeatures = append(transcribedFeatures, features[i])
-		}
+		transcribedFeatures = append(transcribedFeatures, features...)
 	}
 
 	// Replace the features with the transcribed features
