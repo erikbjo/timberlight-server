@@ -92,16 +92,16 @@ func getSuperficialDepositCodesForRoad(road models.ForestRoad) ([]int, error) {
 	// Get the road length
 	roadStart, err := strconv.Atoi(road.Properties.Frameter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert frameter to int: " + err.Error())
+		return nil, fmt.Errorf("failed to convert frameter to int: %s", err.Error())
 	}
 	roadEnd, err := strconv.Atoi(road.Properties.Tilmeter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert tilmeter to int: " + err.Error())
+		return nil, fmt.Errorf("failed to convert tilmeter to int: %s", err.Error())
 	}
 	roadLength := roadEnd - roadStart
 
 	if roadLength < 0 {
-		return nil, fmt.Errorf("road length is negative " + road.Properties.Vegnummer)
+		return nil, fmt.Errorf("road length is negative %s", road.Properties.Vegnummer)
 	}
 
 	queryEveryMeter := 10
@@ -159,11 +159,11 @@ func getSuperficialDepositCodesForPoint(coordinate []float64) ([]int, error) {
 	for _, result := range results {
 		code, ok := result["jordart"]
 		if !ok {
-			return nil, fmt.Errorf("no jordart in results for point: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
+			return nil, fmt.Errorf("no jordart in results for point: %f, %f", coordinate[0], coordinate[1])
 		}
 		codeInt, ok := code.(int)
 		if !ok {
-			return nil, fmt.Errorf("jordart is not an int: " + fmt.Sprintf("%f, %f", coordinate[0], coordinate[1]))
+			return nil, fmt.Errorf("jordart is not an int: %f, %f", coordinate[0], coordinate[1])
 		}
 		codes = append(codes, codeInt)
 	}
@@ -174,7 +174,7 @@ func getSuperficialDepositCodesForPoint(coordinate []float64) ([]int, error) {
 func getIsPointInFjord(coordinate []float64) (bool, error) {
 	results, err := models.QuerySpatialIndex(_fjordIndex, coordinate[0], coordinate[1])
 	if err != nil {
-		return false, fmt.Errorf("failed to query spatial index: " + err.Error())
+		return false, fmt.Errorf("failed to query spatial index: %s", err.Error())
 	}
 
 	if results == nil {

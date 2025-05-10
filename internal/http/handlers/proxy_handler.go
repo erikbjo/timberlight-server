@@ -54,5 +54,8 @@ func (p *Proxy) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Set the status code and write the response body
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		log.Error().Msg("Error while copying proxy response: " + err.Error())
+	}
 }
