@@ -4,8 +4,6 @@ The server serves as the source of information for the [website](https://github.
 
 For a full overview, read the [thesis](https://github.com/skogkursbachelor/thesis).
 
-This repository is archived, check the [fork](https://github.com/erikbjo/timberlight-server) for eventual updates.
-
 ## Contact
 
 - 👑 [Erik Bjørnsen](mailto:erbj@stud.ntnu.no) 🚀
