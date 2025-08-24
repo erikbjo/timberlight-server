@@ -25,10 +25,9 @@ COPY . .
 
 RUN ls -la data/Losmasse
 
-RUN ./data/Losmasse/prepare_data.sh ./data/Losmasse
-
-RUN pip3 install dbf dbfread --break-system-packages
-RUN python3 ./data/Losmasse/fix_invalid_values.py ./data/Losmasse/LosmasseFlate_20240621.dbf
+# RUN ./data/Losmasse/prepare_data.sh ./data/Losmasse
+# RUN pip3 install dbf dbfread --break-system-packages
+# RUN python3 ./data/Losmasse/fix_invalid_values.py ./data/Losmasse/LosmasseFlate_20240621.dbf
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /api ./cmd/api/main.go
 
