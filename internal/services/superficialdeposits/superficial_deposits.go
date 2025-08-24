@@ -15,7 +15,7 @@ import (
 // index is a spatial index for the forestry roads
 var _index = buildIndex()
 
-var _fjordIndex = buildFjordIndex()
+// var _fjordIndex = buildFjordIndex()
 
 func buildIndex() *models.SpatialIndex {
 	shapefiles := []string{
@@ -26,13 +26,13 @@ func buildIndex() *models.SpatialIndex {
 	return models.ReadShapeFilesAndBuildIndex(shapefiles)
 }
 
-func buildFjordIndex() *models.SpatialIndex {
-	shapefiles := []string{
-		"data/Fjord/fjordkatalogen_omrade",
-	}
-
-	return models.ReadShapeFilesAndBuildIndex(shapefiles)
-}
+// func buildFjordIndex() *models.SpatialIndex {
+// 	shapefiles := []string{
+// 		"data/Fjord/fjordkatalogen_omrade",
+// 	}
+//
+// 	return models.ReadShapeFilesAndBuildIndex(shapefiles)
+// }
 
 func UpdateSuperficialDepositCodes(featureMap *map[string][]models.ForestRoad) error {
 	semaphore := make(chan struct{}, runtime.NumCPU())
@@ -172,12 +172,14 @@ func getSuperficialDepositCodesForPoint(coordinate []float64) ([]int, error) {
 }
 
 func getIsPointInFjord(coordinate []float64) (bool, error) {
-	results, err := models.QuerySpatialIndex(_fjordIndex, coordinate[0], coordinate[1])
-	if err != nil {
-		return false, fmt.Errorf("failed to query spatial index: %s", err.Error())
-	}
+	// results, err := models.QuerySpatialIndex(_fjordIndex, coordinate[0], coordinate[1])
+	// if err != nil {
+	// 	return false, fmt.Errorf("failed to query spatial index: %s", err.Error())
+	// }
 
-	if results == nil {
+	// if results == nil {
+	// NOT CHECKING FOR FJORD TODO: CHECK FOR FJORD
+	if true {
 		// If result is nil -> the point is not in a fjord
 		return false, nil
 	} else {
