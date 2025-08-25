@@ -15,6 +15,6 @@ echo "Using path: $1"
 unzip "$1"/superficialdeposits_shape.zip -d "$1"
 
 mv "$1"/Losmasse/* "$1" 
-rm "$1"/Losmasse
+rm -r "$1"/Losmasse
 
 rm "$1"/superficialdeposits_shape.zip

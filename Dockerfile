@@ -25,7 +25,10 @@ COPY . .
 
 RUN ls -la data/Losmasse
 
-# RUN ./data/Losmasse/prepare_data.sh ./data/Losmasse
+RUN ./data/Losmasse/prepare_data.sh ./data/Losmasse
+
+RUN ls -la data/Losmasse
+
 # RUN pip3 install dbf dbfread --break-system-packages
 # RUN python3 ./data/Losmasse/fix_invalid_values.py ./data/Losmasse/LosmasseFlate_20240621.dbf
 
